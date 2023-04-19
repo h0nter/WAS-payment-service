@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block local_stylesheet %}
+    <link href={% static "home/css/home.css" %} rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="banner container">
+    <h1>Welcome to WSA Payments!</h1>
+</div>
+{% endblock %}

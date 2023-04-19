@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block local_stylesheet %}
+    <link href={% static "register/css/register.css" %} rel="stylesheet">
+{% endblock %}
+
+{% block title %}
+    Register User
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <h1 class="section__heading h1">Sign up for WSA Payments</h1>
+
+        <div class="row w-100 justify-content-center">
+            <form class="register-form card col-12 col-md-8 p-3 mt-3" method="POST" autocomplete="off">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-12 col-md-6">
+                        {{ register_form.first_name|as_crispy_field }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ register_form.last_name|as_crispy_field }}
+                    </div>
+                    <div class="col-12">
+                        {{ register_form.username|as_crispy_field }}
+                    </div>
+                    <div class="col-12">
+                        {{ register_form.email|as_crispy_field }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ register_form.password1|as_crispy_field }}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        {{ register_form.password2|as_crispy_field }}
+                    </div>
+                    <div class="col-12">
+                        {{ register_form.currency|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <button type="submit" class="btn btn-primary mt-3 col-10 col-sm-6 col-lg-5">Register Account</button>
+                </div>
+            </form>
+        </div>
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="alert alert-danger alert-dismissable fade show mt-2" role="alert">
+                    {{ message }}
+                    <a type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}

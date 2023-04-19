@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block local_stylesheet %}
+    <link href={% static "register/css/register.css" %} rel="stylesheet">
+{% endblock %}
+
+{% block title %}
+    Register User
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <h1 class="section__heading h1">Sign up for WSA Payments</h1>
+            <div class="alert alert-success mt-5 mb-2 p-3" role="alert">
+                <h5>Account created successfully!</h5>
+            </div>
+            <p class="text-justify">
+                You can now return to the <a href="{% url 'home' %}">homepage</a>.
+            </p>
+    </div>
+{% endblock %}
