@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block local_stylesheet %}
+    <link href={% static "register/css/register.css" %} rel="stylesheet">
+{% endblock %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <img src="{% static "global/img/logo@0.5x.png" %}" width="8%" class="login-logo" alt="logo">
+        <h1 class="section__heading h1">Log In</h1>
+
+        <div class="row w-100 justify-content-center">
+            <form class="register-form card col-12 col-md-5 p-3 mt-3" method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-12">
+                        {{ form.username|as_crispy_field }}
+                    </div>
+                    <div class="col-12">
+                        {{ form.password|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <button type="submit" class="btn btn-primary mt-3 col-10 col-sm-6 col-lg-5">Log In</button>
+                </div>
+            </form>
+        </div>
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="alert alert-danger alert-dismissable fade show mt-2" role="alert">
+                    {{ message }}
+                    <a type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}

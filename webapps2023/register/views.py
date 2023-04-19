@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .forms import CustomUserCreationForm
 from .models import Balance, Currency
 
 
 # Create your views here.
-def register(request):
+def sign_up(request):
 
     form = CustomUserCreationForm(request.POST or None)
 
@@ -28,8 +29,8 @@ def register(request):
         Balance.objects.create(user=user, currency=user.currency, amount=amount)
 
         messages.success(request, "Registered Successfully!")
-        return render(request, "register/success.html")
+        return render(request, "registration/success.html")
     elif request.POST:
-        messages.error(request, "Unsuccessful registration. Invalid information.")
+        messages.error(request, "Registration Unsuccessful. Invalid information.")
 
-    return render(request, "register/register.html", context={"register_form":form})
+    return render(request, "registration/sign_up.html", context={"sign_up_form":form})
