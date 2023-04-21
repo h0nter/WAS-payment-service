@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, Balance
-from .forms import CustomUserCreationForm, CustomUserChangeForm
+from .forms import CustomUserCreationForm, CustomUserCreationFormAdmin, CustomUserChangeForm
 from register.management.user_groups import UserGroups
+
 
 # Register your models here.
 class CustomUserAdmin(UserAdmin):
     # The forms to add and change users
-    add_form = CustomUserCreationForm
+    add_form = CustomUserCreationFormAdmin
     form = CustomUserChangeForm
 
     model = CustomUser
@@ -17,16 +18,15 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('id', 'email', 'username', 'first_name', 'last_name', 'currency', 'balance')
     list_filter = ('id', 'email', 'username', 'first_name', 'last_name', 'currency')
     fieldsets = (
-        (None, {"fields": ("email", "username", "first_name", "last_name", "currency", "password")}),
-        ("Permissions", {"fields": ("is_active", "groups", "user_permissions")}),
+        (None, {"fields": ("email", "username", "first_name", "last_name", "currency", "password", "is_active")}),
+        ("Permissions", {"fields": ("groups", "user_permissions")}),
     )
     admin_readonly_fields = ("currency", "groups", "user_permissions")
     add_fieldsets = (
         (None, {
             "classes": ["wide"],
             "fields": [
-                "email", "username", "first_name", "last_name", "currency",
-                "password1", "password2", "is_active", "groups"
+                "email", "username", "first_name", "last_name", "is_admin"
             ]}
          ),
     )

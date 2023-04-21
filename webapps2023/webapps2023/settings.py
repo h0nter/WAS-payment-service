@@ -31,15 +31,19 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Django default apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Django package, enable CORS service
     'corsheaders',
+    # Forms rendering with Bootstrap 5
     'crispy_forms',
     'crispy_bootstrap5',
+    # Apps
     'register'
 ]
 
@@ -55,13 +59,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-
-CORS_ALLOW_ALL_ORIGINS: False
-
-CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
 ]
 
 ROOT_URLCONF = 'webapps2023.urls'
@@ -99,6 +96,10 @@ DATABASES = {
 # Custom User Model
 AUTH_USER_MODEL = "register.CustomUser"
 
+# Default redirects for auth
+LOGIN_URL = '/register/login/'
+LOGIN_REDIRECT_URL = '/register/dashboard/'
+LOGOUT_REDIRECT_URL = '/register/login/'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -143,3 +144,9 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CORS CONFIG
+# Anything outside this list cannot make browser connections to the server
+CORS_ALLOWED_ORIGINS = [
+    # Add any origins which need to make requests to the REST API from outside the app.
+]

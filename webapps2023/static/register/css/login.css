@@ -1,0 +1,30 @@
+.login-logo{
+    width: 8%;
+    min-width: 5rem;
+    max-width: 8rem;
+    margin-bottom: 1rem;
+}
+
+.login-error{
+    margin-top: 1rem;
+    color: #c95555;
+}
+
+.login-error__message {
+    margin-bottom: 0;
+}
+
+.password-reset{
+    margin-top: 1rem;
+}
+
+.password-reset__link{
+    font-size: 1.2rem;
+    color: #939393 !important;
+    text-decoration: none !important;
+}
+
+.password-reset__link:hover{
+    color: #525252 !important;
+    text-decoration: none !important;
+}

@@ -10,10 +10,34 @@ class CustomUserManager(BaseUserManager):
     """
     use_in_migrations = True
 
-    def create_user(self, email, username, first_name, last_name, password, currency="", **extra_fields):
+    @staticmethod
+    def assign_permission_groups(user):
+
+        # Add user to a permission group
+        if not user.is_admin:
+            customers_group, created = Group.objects.get_or_create(name=UserGroups.CUSTOMERS.value)
+
+            if created:
+                print("Created customers group")
+
+            # Regular/Customer users
+            user.groups.add(customers_group)
+        elif user.is_admin and not user.is_superuser:
+            # superusers have all permissions by default
+            # Non-superuser admins
+            admins_group, created = Group.objects.get_or_create(name=UserGroups.ADMINS.value)
+
+            if created:
+                print("Created admins group")
+
+            user.groups.add(admins_group)
+
+        return user
+
+    def create_user_without_save(self, email, username, first_name, last_name, password=None, currency="", **extra_fields):
         """
-        Create and save a user with the given email and password.
-        """
+       Create user with the given details, without saving in the database.
+       """
         is_administrator = extra_fields.get("is_superuser") is True or extra_fields.get("is_admin") is True
 
         # All Users validation
@@ -26,15 +50,21 @@ class CustomUserManager(BaseUserManager):
         if not last_name:
             raise ValueError("The Last Name must be set")
 
-        # Regular/Public User validation
+        # Currency validation - administrators don't need it
         if not is_administrator:
             if not currency:
                 raise ValueError("The Currency must be set")
 
-        # Admin/Super User validation
-        if is_administrator:
-            if password is None:
+        # Password validation
+        if password is None:
+            if not is_administrator:
+                raise ValueError("The password cannot be empty")
+            else:
+                # Generate random password for administrators
                 password = self.make_random_password()
+
+        # Admin/Super User accounts have to be active by default
+        if is_administrator:
             if not extra_fields.get("is_active"):
                 extra_fields.setdefault("is_active", True)
 
@@ -49,26 +79,18 @@ class CustomUserManager(BaseUserManager):
             **extra_fields
         )
         user.set_password(password)
+
+        return user
+
+    def create_user(self, email, username, first_name, last_name, password=None, currency="", **extra_fields):
+        """
+        Create and save a user with the given details.
+        """
+        user = self.create_user_without_save(email, username, first_name, last_name, password, currency, **extra_fields)
         user.save()
 
-        # Add user to a permission group
-        if not is_administrator:
-            customers_group, created = Group.objects.get_or_create(name=UserGroups.CUSTOMERS.value)
-
-            if created:
-                print("Created customers group")
-
-            # Regular/Customer users
-            user.groups.add(customers_group)
-        elif extra_fields.get("is_admin") and not extra_fields.get("is_superuser"):
-            # superusers have all permissions by default
-            # Non-superuser admins
-            admins_group, created = Group.objects.get_or_create(name=UserGroups.ADMINS.value)
-
-            if created:
-                print("Created admins group")
-
-            user.groups.add(admins_group)
+        # Assign user to their corresponding permission group.
+        self.assign_permission_groups(user)
 
         # Reload the user to avoid permission cache problem in testing
         user = get_object_or_404(self.model, username=username)

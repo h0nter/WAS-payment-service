@@ -19,25 +19,25 @@
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-12 col-md-6">
-                        {{ sign_up_form.first_name|as_crispy_field }}
+                        {{ form.first_name|as_crispy_field }}
                     </div>
                     <div class="col-12 col-md-6">
-                        {{ sign_up_form.last_name|as_crispy_field }}
+                        {{ form.last_name|as_crispy_field }}
                     </div>
                     <div class="col-12">
-                        {{ sign_up_form.username|as_crispy_field }}
+                        {{ form.username|as_crispy_field }}
                     </div>
                     <div class="col-12">
-                        {{ sign_up_form.email|as_crispy_field }}
+                        {{ form.email|as_crispy_field }}
                     </div>
                     <div class="col-12 col-md-6">
-                        {{ sign_up_form.password1|as_crispy_field }}
+                        {{ form.password1|as_crispy_field }}
                     </div>
                     <div class="col-12 col-md-6">
-                        {{ sign_up_form.password2|as_crispy_field }}
+                        {{ form.password2|as_crispy_field }}
                     </div>
                     <div class="col-12">
-                        {{ sign_up_form.currency|as_crispy_field }}
+                        {{ form.currency|as_crispy_field }}
                     </div>
                 </div>
                 <div class="row justify-content-center">

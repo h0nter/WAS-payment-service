@@ -42,6 +42,43 @@ class CustomUserCreationForm(forms.ModelForm):
         if commit:
             user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'),username=self.cleaned_data.get('username'),first_name=self.cleaned_data.get('first_name'),last_name=self.cleaned_data.get('last_name'),currency=self.cleaned_data.get('currency'),password=self.cleaned_data.get('password2'))
             return user
+        else:
+            user = CustomUser.objects.create_user_without_save(email=self.cleaned_data.get('email'),username=self.cleaned_data.get('username'),first_name=self.cleaned_data.get('first_name'),last_name=self.cleaned_data.get('last_name'),currency=self.cleaned_data.get('currency'),password=self.cleaned_data.get('password2'))
+            return user
+
+
+# Administrator user creation form
+class CustomUserCreationFormAdmin(forms.ModelForm):
+
+    user = None
+    is_admin = forms.BooleanField(label='Administrator', widget=forms.CheckboxInput(
+        attrs={'readonly': 'readonly', 'checked': True}
+    ))
+
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'first_name', 'last_name', 'email', 'is_admin']
+
+
+    def clean_email(self):
+        '''
+        Verify email is available.
+        '''
+        email = self.cleaned_data.get('email')
+        qs = CustomUser.objects.filter(email=email)
+        if qs.exists():
+            raise ValidationError("An account with this email already exists")
+        return email
+
+    def save(self, commit=True):
+        if commit:
+            self.user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'), username=self.cleaned_data.get('username'), first_name=self.cleaned_data.get('first_name'), last_name=self.cleaned_data.get('last_name'), is_admin=self.cleaned_data.get('is_admin'))
+        else:
+            self.user = CustomUser.objects.create_user_without_save(email=self.cleaned_data.get('email'), username=self.cleaned_data.get('username'), first_name=self.cleaned_data.get('first_name'), last_name=self.cleaned_data.get('last_name'), is_admin=self.cleaned_data.get('is_admin'))
+        return self.user
+
+    def save_m2m(self):
+        CustomUser.objects.assign_permission_groups(self.user)
 
 
 class CustomUserChangeForm(forms.ModelForm):
@@ -49,6 +86,7 @@ class CustomUserChangeForm(forms.ModelForm):
     the user, but replaces the password field with admin's
     disabled password hash display field.
     """
+    record = None
 
     password = ReadOnlyPasswordHashField()
 
@@ -61,8 +99,29 @@ class CustomUserChangeForm(forms.ModelForm):
         Verify email is available.
         '''
         email = self.cleaned_data.get('email')
-        qs = CustomUser.objects.filter(email=email)
+
+        # Check if the provided email address is not used by another user, except of the user themselves
+        qs = CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk)
+
+        # Skip the qs length check as emails are unique -> length == 1
         if qs.exists():
-            raise forms.ValidationError("email is taken")
+            raise forms.ValidationError("Another account is already registered with this email")
+
         return email
+
+    def clean_username(self):
+        '''
+        Verify username is available.
+        '''
+        username = self.cleaned_data.get('username')
+
+        # Check if the provided email address is not used by another user, except of the user themselves
+        qs = CustomUser.objects.filter(username=username).exclude(pk=self.instance.pk)
+
+        # Skip the qs length check as emails are unique -> length == 1
+        if qs.exists():
+            raise forms.ValidationError("This username isn't available")
+
+        return username
+
 
