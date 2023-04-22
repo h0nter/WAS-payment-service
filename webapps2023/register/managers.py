@@ -15,20 +15,20 @@ class CustomUserManager(BaseUserManager):
 
         # Add user to a permission group
         if not user.is_admin:
-            customers_group, created = Group.objects.get_or_create(name=UserGroups.CUSTOMERS.value)
+            customers_group, created = Group.objects.get_or_create(name=UserGroups.CUSTOMERS)
 
             if created:
-                print("Created customers group")
+                print(f'Created {UserGroups.CUSTOMERS} group')
 
             # Regular/Customer users
             user.groups.add(customers_group)
         elif user.is_admin and not user.is_superuser:
             # superusers have all permissions by default
             # Non-superuser admins
-            admins_group, created = Group.objects.get_or_create(name=UserGroups.ADMINS.value)
+            admins_group, created = Group.objects.get_or_create(name=UserGroups.ADMINS)
 
             if created:
-                print("Created admins group")
+                print(f'Created {UserGroups.ADMINS} group')
 
             user.groups.add(admins_group)
 
@@ -93,6 +93,7 @@ class CustomUserManager(BaseUserManager):
 
         # Assign user to their corresponding permission group.
         self.assign_permission_groups(user)
+        user.save()
 
         # Reload the user to avoid permission cache problem in testing
         user = get_object_or_404(self.model, username=username)

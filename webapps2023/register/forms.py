@@ -40,11 +40,14 @@ class CustomUserCreationForm(forms.ModelForm):
 
     def save(self, commit=True):
         if commit:
-            user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'),username=self.cleaned_data.get('username'),first_name=self.cleaned_data.get('first_name'),last_name=self.cleaned_data.get('last_name'),currency=self.cleaned_data.get('currency'),password=self.cleaned_data.get('password2'))
+            self.user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'),username=self.cleaned_data.get('username'),first_name=self.cleaned_data.get('first_name'),last_name=self.cleaned_data.get('last_name'),currency=self.cleaned_data.get('currency'),password=self.cleaned_data.get('password2'))
             return user
         else:
             user = CustomUser.objects.create_user_without_save(email=self.cleaned_data.get('email'),username=self.cleaned_data.get('username'),first_name=self.cleaned_data.get('first_name'),last_name=self.cleaned_data.get('last_name'),currency=self.cleaned_data.get('currency'),password=self.cleaned_data.get('password2'))
             return user
+
+    def save_m2m(self):
+        CustomUser.objects.assign_permission_groups(self.user)
 
 
 # Administrator user creation form

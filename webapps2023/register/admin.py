@@ -48,7 +48,7 @@ class CustomUserAdmin(UserAdmin):
         # Restrict some fields to be read-only for admins
         # Can probably remove this in the final version
         # Admins shouldn't have permission to modify anything
-        if request.user.groups.filter(name=UserGroups.ADMINS.value):
+        if request.user.groups.filter(name=UserGroups.ADMINS):
             return self.admin_readonly_fields
         else:
             return super(CustomUserAdmin, self).get_readonly_fields(request,obj=obj)

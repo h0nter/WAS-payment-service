@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.forms import ValidationError
 from .forms import CustomUserCreationForm
 from .models import Balance, Currency
-from .decorators import check_user_is_in_group
+from .decorators import check_is_customer_admin_redirect
 from .management.user_groups import UserGroups
 
 
@@ -102,7 +102,7 @@ def sign_up(request):
 
 # Account overview/Dashboard view
 @login_required
-@check_user_is_in_group(UserGroups.CUSTOMERS)
+@check_is_customer_admin_redirect
 def user_dashboard(request):
     # Make sure that only 'GET' requests are allowed to the dashboard
     if request.method == 'GET':

@@ -4,11 +4,10 @@ from register import models
 from register.management.user_groups import UserGroups
 
 GROUPS_PERMISSIONS = {
-    UserGroups.CUSTOMERS.value: {
-        models.CustomUser: ['view', 'add', 'change'],
-        models.Balance: ['view']
+    UserGroups.CUSTOMERS: {
+        # Create an empty group without permissions just to identify regular users
     },
-    UserGroups.ADMINS.value: {
+    UserGroups.ADMINS: {
         models.CustomUser: ['view', 'add', 'change'],
         models.Balance: ['view'],
     }
@@ -23,6 +22,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Loop groups
         for group_name in GROUPS_PERMISSIONS:
+
+            print(UserGroups.ADMINS)
+            print(UserGroups.CUSTOMERS)
 
             # Get or create group
             group, created = Group.objects.get_or_create(name=group_name)

@@ -1,7 +1,10 @@
-from enum import Enum
+from strenum import StrEnum
 
 
-class UserGroups(Enum):
+class UserGroups(StrEnum):
     CUSTOMERS = "Customers"
     ADMINS = "Admins"
+
+    # def __str__(self):
+    #     return self.value
 
