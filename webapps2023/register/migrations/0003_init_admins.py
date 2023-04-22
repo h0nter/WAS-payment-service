@@ -40,6 +40,6 @@ def generate_superuser(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("register", "0001_initial")]
+    dependencies = [("register", "0002_customuser_change_password")]
 
     operations = [migrations.RunPython(generate_superuser), migrations.RunPython(generate_admin)]

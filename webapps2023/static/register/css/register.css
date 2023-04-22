@@ -10,3 +10,7 @@
 .section__heading {
     text-align: center;
 }
+
+.section__heading--text-red {
+    color: #c77b7b !important;
+}

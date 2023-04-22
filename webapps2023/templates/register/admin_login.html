@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block local_stylesheet %}
+    <link href={% static "register/css/register.css" %} rel="stylesheet">
+    <link href={% static "register/css/login.css" %} rel="stylesheet">
+{% endblock %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <img src="{% static "global/img/logo@0.5x.png" %}" class="login-logo" alt="logo">
+        <h1 class="section__heading section__heading--text-red h1">Administrator Log In</h1>
+
+        <div class="row w-100 justify-content-center">
+            <form class="login-form card col-12 col-md-5 p-3 mt-3" method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="login-form__text-input col-12">
+                        {{ form.username|as_crispy_field }}
+                    </div>
+                    <div class="login-form__text-input col-12">
+                        {{ form.password|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <button type="submit" class="login-form__submit btn btn-primary mt-3 col-10 col-sm-6 col-lg-5">Log In</button>
+                </div>
+            </form>
+        </div>
+
+        {% if form.errors %}
+            <div class="login-error">
+                <p class="login-error__message">Your username and password didn't match. Please try again.</p>
+            </div>
+        {% endif %}
+
+        <div class="password-reset">
+            <a href="{% url 'password_reset' %}" class="password-reset__link">Forgot your password?</a>
+        </div>
+
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="alert alert-danger alert-dismissable fade show mt-2" role="alert">
+                    {{ message }}
+                    <a type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}

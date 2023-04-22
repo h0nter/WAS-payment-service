@@ -62,6 +62,8 @@ class CustomUserManager(BaseUserManager):
             else:
                 # Generate random password for administrators
                 password = self.make_random_password()
+                # Make sure the admin changes the password on first login
+                extra_fields.setdefault("change_password", True)
 
         # Admin/Super User accounts have to be active by default
         if is_administrator:

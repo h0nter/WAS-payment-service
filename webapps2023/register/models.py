@@ -18,6 +18,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     currency = models.CharField(max_length=3, choices=Currency.choices, default='')
     is_active = models.BooleanField('active', default=False)
     is_admin = models.BooleanField('admin', default=False)
+    change_password = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     USERNAME_FIELD = "username"
