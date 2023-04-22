@@ -1,3 +1,16 @@
+:root{
+    --bs-primary: #091627;
+    --bs-primary-rgb: 9,22,39;
+    --bs-body-bg: #fefefe;
+    --bs-body-bg-rgb: 254,254,254;
+    --bs-red: #FF6B6B;
+    --bs-red-rgb: 255,107,107;
+    --bs-danger: #FF6B6B;
+    --bs-danger-rgb: 255,107,107;
+    --bs-danger-text: #7b435b;
+    --bs-danger-text-rgb: 123, 67, 91;
+}
+
 html {
     height: 100%;
     width: 100%;
@@ -10,6 +23,15 @@ body {
     width: 100%;
     margin: 0;
     padding: 0;
+}
+
+.navbar-dark{
+    --bs-navbar-color: rgba(var(--bs-body-bg-rgb),0.8);
+    --bs-navbar-hover-color: rgba(var(--bs-body-bg-rgb),1);
+}
+
+.navbar-logo {
+    width: 15%;
 }
 
 .wrapper {
