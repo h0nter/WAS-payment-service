@@ -4,17 +4,31 @@
 
 {% block local_stylesheet %}
     <link href={% static "register/css/register.css" %} rel="stylesheet">
+    <link href={% static "register/css/dashboard.css" %} rel="stylesheet">
 {% endblock %}
 
 {% block title %}
     My Dashboard
 {% endblock %}
 
+{% block account_nav %}
+    {% with logged_in=user.is_authenticated %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock %}
+
 {% block content %}
-    <div class="section container">
+    <div id="section-welcome-message" class="section container">
         <h1 class="section__heading h1">Welcome back, {{ user.first_name }}!</h1>
-        <p class="text-justify mt-10">
-            <a href="{% url 'logout' %}">Log out</a>.
-        </p>
+    </div>
+    <div id="section-dashboard" class="section container">
+        <div class="dashboard row">
+            <div id="dashboard__panel-balance" class="dashboard__panel col-12 col-md-6">
+                Balance
+            </div>
+            <div id="dashboard__panel-transactions" class="dashboard__panel col-12 col-md-6">
+                Recent Transactions
+            </div>
+        </div>
     </div>
 {% endblock %}

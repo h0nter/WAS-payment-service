@@ -8,13 +8,13 @@
 {% endblock %}
 
 {% block title %}
-    Login
+    Admin Login
 {% endblock %}
 
 {% block content %}
     <div class="section container">
         <img src="{% static "global/img/logo@0.5x.png" %}" class="login-logo" alt="logo">
-        <h1 class="section__heading section__heading--text-red h1">Administrator Log In</h1>
+        <h1 class="section__heading h1 text-danger">Administrator Log In</h1>
 
         <div class="row w-100 justify-content-center">
             <form class="login-form card col-12 col-md-5 p-3 mt-3" method="POST">
@@ -28,14 +28,18 @@
                     </div>
                 </div>
                 <div class="row justify-content-center">
-                    <button type="submit" class="login-form__submit btn btn-primary mt-3 col-10 col-sm-6 col-lg-5">Log In</button>
+                    <button type="submit" class="login-form__submit btn btn-primary mt-3 col-10 col-sm-6 col-lg-5">
+                        Log In
+                    </button>
                 </div>
             </form>
         </div>
 
         {% if form.errors %}
             <div class="login-error">
-                <p class="login-error__message">Your username and password didn't match. Please try again.</p>
+                <p class="login-error__message text-danger">
+                    Your username and password didn't match. Please try again.
+                </p>
             </div>
         {% endif %}
 

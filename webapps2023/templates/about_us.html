@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block local_stylesheet %}
+    <link href={% static "about_us/css/about_us.css" %} rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <h1 class="section__heading h1 w-100">Secure. Fast. Reliable.</h1>
+        <div class="row justify-content-between">
+            <div class="col-12 col-md-6 order-second order-md-first">
+                <p class="lead text-justify">
+                    Welcome to WSA Payments, a leading online payment service that makes it easy and secure for you to
+                    send and receive money globally.
+                </p>
+                <p class="text-justify">
+                    At WSA Payments, we believe in offering our customers a fast, secure, and hassle-free way to make
+                    online transactions. Whether you're a business owner looking to expand your reach or an individual
+                    sending money to friends and family, we've got you covered.
+                </p>
+                <p class="text-justify">
+                    Our platform is built on cutting-edge technology that ensures your transactions are protected by the
+                    highest level of security measures. We prioritize the safety of your funds and sensitive information
+                    above all else, so you can rest assured that your transactions are in good hands.
+                </p>
+                <p class="text-justify">
+                    We pride ourselves on our commitment to exceptional customer service. Our team of dedicated
+                    professionals is available to assist you with any questions or concerns you may have. Whether you
+                    need help setting up an account, troubleshooting a technical issue, or just have a general inquiry,
+                    we're here to help.
+                </p>
+                <p class="text-justify">
+                    At WSA Payments, we strive to make the online payment experience as seamless and straightforward as
+                    possible. That's why we offer a user-friendly platform that is easy to navigate, with features
+                    designed to meet the unique needs of all customers.
+                </p>
+            </div>
+            <div class="about-us-cover col-12 col-md-6 order-first order-md-second"
+                 style="background-image: url('{% static "about_us/img/cover.jpg" %}');">
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

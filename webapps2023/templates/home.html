@@ -5,6 +5,12 @@
     <link href={% static "home/css/home.css" %} rel="stylesheet">
 {% endblock %}
 
+{% block account_nav %}
+    {% with logged_in=user.is_authenticated %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock %}
+
 {% block content %}
 <div class="banner container">
     <h1>Welcome to WSA Payments!</h1>

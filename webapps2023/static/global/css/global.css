@@ -7,8 +7,8 @@
     --bs-red-rgb: 255,107,107;
     --bs-danger: #FF6B6B;
     --bs-danger-rgb: 255,107,107;
-    --bs-danger-text: #7b435b;
-    --bs-danger-text-rgb: 123, 67, 91;
+    --bs-danger-text: #954B4C;
+    --bs-danger-text-rgb: 149, 75, 76;
 }
 
 html {
@@ -30,8 +30,25 @@ body {
     --bs-navbar-hover-color: rgba(var(--bs-body-bg-rgb),1);
 }
 
+.navbar-brand__text{
+   font-weight: 500;
+    font-size: 1.5rem;
+}
+
 .navbar-logo {
-    width: 15%;
+    width: 10%;
+    min-width: 2.5rem;
+    max-width: 3.5rem;
+}
+
+.navbar__icon{
+    background: none;
+    border: none;
+    color: var(--bs-navbar-color);
+}
+
+.navbar__icon:hover{
+    color: var(--bs-navbar-hover-color);
 }
 
 .wrapper {

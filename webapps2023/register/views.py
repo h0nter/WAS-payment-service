@@ -1,26 +1,62 @@
 from django.shortcuts import render, redirect
+from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView, PasswordChangeView
+from django.contrib.auth.views import LoginView, PasswordChangeView, TemplateView
 from django.contrib.auth import login
 from django.contrib import messages
 from django.http import HttpResponseNotAllowed, HttpResponseRedirect
 from django.urls import reverse
 from django.forms import ValidationError
+from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from .forms import CustomUserCreationForm
 from .models import Balance, Currency
-from .decorators import check_is_customer_admin_redirect
+from .decorators import allow_customer_redirect_admin, redirect_if_logged_in
 from .management.user_groups import UserGroups
 
 
+@method_decorator([redirect_if_logged_in], name='dispatch')
+class CustomTemplateView(TemplateView):
+    # Add user to the template context for navigation bar set-up
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user'] = self.request.user
+        return context
+
+
+@method_decorator([redirect_if_logged_in], name='dispatch')
 # User login
 class CustomLoginView(LoginView):
     template_name = 'register/login.html'
     redirect_authenticated_user = True
 
+    def dispatch(self, request, *args, **kwargs):
+        # Set the AUTHENTICATION_BACKENDS setting to the custom backend
+        settings.AUTHENTICATION_BACKENDS = ['register.backends.CustomerLoginBackend']
+
+        try:
+            # Call the parent dispatch method to handle the login
+            return super().dispatch(request, *args, **kwargs)
+        except PermissionDenied:
+            # Handle the PermissionDenied exception if the user is an admin
+            return self.handle_no_permission()
+
 
 # Admin Login
 class CustomLoginViewAdmin(LoginView):
     template_name = 'register/admin_login.html'
+    redirect_authenticated_user = True
+
+    def dispatch(self, request, *args, **kwargs):
+        # Set the AUTHENTICATION_BACKENDS setting to the custom backend
+        settings.AUTHENTICATION_BACKENDS = ['register.backends.AdminLoginBackend']
+
+        try:
+            # Call the parent dispatch method to handle the login
+            return super().dispatch(request, *args, **kwargs)
+        except PermissionDenied:
+            # Handle the PermissionDenied exception if the user is an admin
+            return self.handle_no_permission()
 
     # Users' authenticated - need to log them in
     def form_valid(self, form):
@@ -69,6 +105,7 @@ class CustomPasswordChangeViewAdmin(PasswordChangeView):
         return super().form_valid(form)
 
 
+@redirect_if_logged_in
 # User registration view
 def sign_up(request):
 
@@ -102,7 +139,7 @@ def sign_up(request):
 
 # Account overview/Dashboard view
 @login_required
-@check_is_customer_admin_redirect
+@allow_customer_redirect_admin
 def user_dashboard(request):
     # Make sure that only 'GET' requests are allowed to the dashboard
     if request.method == 'GET':
