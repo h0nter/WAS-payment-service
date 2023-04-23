@@ -18,6 +18,7 @@ class BalanceTransfer(models.Model):
     recipient_email = models.EmailField('recipient email', max_length=254)
     currency = models.CharField(max_length=3, choices=constants.Currency.choices, default=constants.Currency.GBP)
     amount = models.DecimalField(max_digits=constants.MAX_DIGITS, decimal_places=2, default=0.00)
+    description = models.CharField(max_length=50, default='')
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -41,6 +42,7 @@ class PaymentRequest(models.Model):
     recipient_email = models.EmailField('recipient email', max_length=254)
     currency = models.CharField(max_length=3, choices=constants.Currency.choices, default=constants.Currency.GBP)
     amount = models.DecimalField(max_digits=constants.MAX_DIGITS, decimal_places=2, default=0.00)
+    description = models.CharField(max_length=50, default='')
     start_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=3, choices=RequestStatus.choices, default=RequestStatus.PND)
     closed_date = models.DateTimeField(null=True, blank=True)

@@ -2,10 +2,6 @@
 {% load crispy_forms_tags %}
 {% load static %}
 
-{% block local_stylesheet %}
-    <link href={% static "transactions/css/balance_transfer.css" %} rel="stylesheet">
-{% endblock %}
-
 {% block title %}
     Send Money
 {% endblock %}
@@ -32,6 +28,9 @@
                     </div>
                     <div class="balance-transfer-form__text-input col-12">
                         {{ form.currency|as_crispy_field }}
+                    </div>
+                    <div class="balance-transfer-form__text-input col-12">
+                        {{ form.description|as_crispy_field }}
                     </div>
                 </div>
                 <div class="row justify-content-center">

@@ -14,7 +14,7 @@ class BalanceTransferForm(forms.ModelForm):
 
     class Meta:
         model = BalanceTransfer
-        fields = ['recipient_email', 'amount', 'currency']
+        fields = ['recipient_email', 'amount', 'currency', 'description']
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -89,7 +89,8 @@ class BalanceTransferForm(forms.ModelForm):
                     bt = BalanceTransfer.objects.create(sender_email=sender_email,
                                                         recipient_email=self.cleaned_data.get('recipient_email'),
                                                         currency=self.cleaned_data.get('currency'),
-                                                        amount=self.cleaned_data.get('amount'))
+                                                        amount=self.cleaned_data.get('amount'),
+                                                        description=self.cleaned_data.get('description'))
                     return bt
 
         raise forms.ValidationError("There was a problem processing your request, please try again.")
@@ -103,7 +104,7 @@ class PaymentRequestForm(forms.ModelForm):
 
     class Meta:
         model = PaymentRequest
-        fields = ['recipient_email', 'amount', 'currency']
+        fields = ['recipient_email', 'amount', 'currency', 'description']
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -160,7 +161,8 @@ class PaymentRequestForm(forms.ModelForm):
                     br = PaymentRequest.objects.create(sender_email=sender_email,
                                                        recipient_email=self.cleaned_data.get('recipient_email'),
                                                        currency=self.cleaned_data.get('currency'),
-                                                       amount=self.cleaned_data.get('amount'))
+                                                       amount=self.cleaned_data.get('amount'),
+                                                       description=self.cleaned_data.get('description'))
                     return br
 
         raise forms.ValidationError("There was a problem processing your request, please try again.")

@@ -2,12 +2,8 @@
 {% load crispy_forms_tags %}
 {% load static %}
 
-{% block local_stylesheet %}
-    <link href={% static "transactions/css/balance_transfer.css" %} rel="stylesheet">
-{% endblock %}
-
 {% block title %}
-    Send Money
+    Request Payment
 {% endblock %}
 
 {% block account_nav %}
@@ -21,22 +17,25 @@
         <h1 class="section__heading h1">Request a payment</h1>
 
         <div class="row w-100 justify-content-center">
-            <form class="balance-transfer-form card col-12 col-md-5 p-3 mt-3" method="POST">
+            <form class="payment-request-form card col-12 col-md-5 p-3 mt-3" method="POST">
                 {% csrf_token %}
                 <div class="row">
-                    <div class="balance-transfer-form__text-input col-12">
+                    <div class="payment-request-form__text-input col-12">
                         {{ form.recipient_email|as_crispy_field }}
                     </div>
-                    <div class="balance-transfer-form__text-input col-12">
+                    <div class="payment-request-form__text-input col-12">
                         {{ form.amount|as_crispy_field }}
                     </div>
-                    <div class="balance-transfer-form__text-input col-12">
+                    <div class="payment-request-form__text-input col-12">
                         {{ form.currency|as_crispy_field }}
+                    </div>
+                    <div class="payment-request-form__text-input col-12">
+                        {{ form.description|as_crispy_field }}
                     </div>
                 </div>
                 <div class="row justify-content-center">
                     <button type="submit"
-                            class="balance-transfer-form__submit btn btn-success mt-3 col-10 col-sm-6 col-lg-5">
+                            class="payment-request-form__submit btn btn-success mt-3 col-10 col-sm-6 col-lg-5">
                         Make a request
                     </button>
                 </div>
