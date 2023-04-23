@@ -3,7 +3,7 @@ from transactions.models import Balance, BalanceTransfer, PaymentRequest
 
 
 class BalanceTransferAdmin(admin.ModelAdmin):
-    list_display = ('id', 'sender_email', 'recipient_email', 'currency', 'amount', 'date')
+    list_display = ('id', 'sender_email', 'recipient_email', 'currency', 'amount', 'created_at')
     list_filter = ('currency',)
     search_fields = ('id', 'sender_email', 'recipient_email')
     list_per_page = 10

@@ -18,7 +18,7 @@ class BalanceTransfer(models.Model):
     recipient_email = models.EmailField('recipient email', max_length=254)
     currency = models.CharField(max_length=3, choices=constants.Currency.choices, default=constants.Currency.GBP)
     amount = models.DecimalField(max_digits=constants.MAX_DIGITS, decimal_places=2, default=0.00)
-    date = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f'{self.amount} {self.currency} sent, ' \
@@ -50,3 +50,12 @@ class PaymentRequest(models.Model):
                f'from: {self.recipient_email}, on: {self.start_date.date()}, ' \
                f'at: {self.start_date.strftime("%H:%M:%S")}, status: {self.status},' \
                f'closed: {self.closed_date}'
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    type = models.CharField(max_length=3, choices=constants.NotificationType.choices, default='')
+    transfer = models.ForeignKey(BalanceTransfer, on_delete=models.CASCADE, null=True, blank=True)
+    request = models.ForeignKey(PaymentRequest, on_delete=models.CASCADE, null=True, blank=True)
+    viewed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)

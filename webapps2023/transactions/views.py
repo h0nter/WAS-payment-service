@@ -2,12 +2,23 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.contrib import messages
+from functools import partial
 from register.decorators import allow_customer_redirect_admin
 from decimal import Decimal
-from .models import Balance
+from register.models import CustomUser
+from .models import Balance, Notification
 import transactions.constants as constants
 from .utils import convert_currency, round_up_2dp
 from .forms import BalanceTransferForm, PaymentRequestForm
+
+
+def create_transfer_notifications(sender, recipient, transfer_obj):
+    Notification.objects.create(user=sender, type=constants.NotificationType.SND, transfer=transfer_obj)
+    Notification.objects.create(user=recipient, type=constants.NotificationType.REC, transfer=transfer_obj)
+
+
+def create_request_notification(recipient, request_obj):
+    Notification.objects.create(user=recipient, type=constants.NotificationType.REQ, request=request_obj)
 
 
 @login_required
@@ -26,7 +37,8 @@ def balance_transfer(request):
 
             # Fetch the recipient's data
             recipient_email = form.cleaned_data.get("recipient_email")
-            recipient_currency = Balance.objects.get(user__email=recipient_email).currency
+            recipient_user = CustomUser.objects.get(email=recipient_email)
+            recipient_currency = recipient_user.currency
 
             # Calculate the amounts to subtract/add in the transaction
             transfer_amount = form.cleaned_data.get("amount")
@@ -52,6 +64,7 @@ def balance_transfer(request):
             # or fully rolled back to maintain integrity
             try:
                 with transaction.atomic():
+
                     if sender_balance.amount < sub_amount:
                         raise ValueError('Insufficient funds to complete the transfer.')
 
@@ -65,8 +78,13 @@ def balance_transfer(request):
                     recipient_balance.amount = recipient_balance.amount + add_amount
                     recipient_balance.save()
 
-                    form.save()
+                    bt = form.save()
                     success = True
+
+                    # Send out the notifications to the users involved in the transaction
+                    transaction.on_commit(
+                        partial(create_transfer_notifications, sender=sender_user, recipient=recipient_user,
+                                transfer_obj=bt))
 
             except IntegrityError:
                 # In case the transaction fails at any point, send an error message
@@ -92,9 +110,13 @@ def payment_request(request):
         form = PaymentRequestForm(request.POST, request=request)
 
         if form.is_valid():
-            # Create a Notification for the target user
+            pr = form.save()
 
-            form.save()
+            recipient_email = form.cleaned_data.get('recipient_email')
+            recipient = CustomUser.objects.get(email=recipient_email)
+
+            # Create a Notification for the target user
+            create_request_notification(recipient=recipient, request_obj=pr)
 
             return render(request, "transactions/request_success.html", {"user": request.user})
 

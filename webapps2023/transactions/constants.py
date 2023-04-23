@@ -26,3 +26,9 @@ class Currency(TextChoices):
     GBP = 'GBP', 'GBP (British Pound Sterling)'
     USD = 'USD', 'USD (United States Dollar)'
     EUR = 'EUR', 'EUR (Euro)'
+
+
+class NotificationType(TextChoices):
+    REC = 'REC', 'Transfer received'
+    SND = 'SND', 'Transferred'
+    REQ = 'REQ', 'Request received'
