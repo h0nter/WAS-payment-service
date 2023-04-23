@@ -1,6 +1,7 @@
 from django.core.management import BaseCommand
 from django.contrib.auth.models import Group, Permission
-from register import models
+from register.models import CustomUser
+from transactions.models import Balance, BalanceTransfer
 from register.management.user_groups import UserGroups
 
 GROUPS_PERMISSIONS = {
@@ -8,10 +9,12 @@ GROUPS_PERMISSIONS = {
         # Create an empty group without permissions just to identify regular users
     },
     UserGroups.ADMINS: {
-        models.CustomUser: ['view', 'add', 'change'],
-        models.Balance: ['view'],
+        CustomUser: ['view', 'add', 'change'],
+        Balance: ['view'],
+        BalanceTransfer: ['view'],
     }
 }
+
 
 class Command(BaseCommand):
     def __init__(self, *args, **kwargs):

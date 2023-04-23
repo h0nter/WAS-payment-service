@@ -24,9 +24,9 @@
 
 <body>
 <header>
-    <nav class="navbar sticky-top navbar-expand-md navbar-dark navbar-sm bg-primary">
+    <nav class="navbar sticky-top navbar-expand-lg navbar-dark navbar-sm bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand ms-md-5 me-4" href="{% url 'home' %}">
+            <a class="navbar-brand ms-lg-5 me-4" href="{% url 'home' %}">
                 <img src="{% static "global/img/logo@0.25x.png" %}" class="navbar-logo d-inline-block me-1" alt="logo">
                 <span class="navbar-brand__text align-middle">Payments</span>
             </a>
@@ -47,9 +47,14 @@
                                        href="{% url 'dashboard' %}">Dashboard</a>
                                 </li>
                                 <li class="nav-item me-2">
+                                    <a class="nav-link  {{ send_active }}"
+                                       {% if send_active %}aria-current="page"{% endif %}
+                                       href="{% url 'transfer' %}">Send</a>
+                                </li>
+                                <li class="nav-item me-2">
                                     <a class="nav-link  {{ transactions_active }}"
                                        {% if transactions_active %}aria-current="page"{% endif %}
-                                       href="{% url 'dashboard' %}">Send and Request</a>
+                                       href="{% url 'dashboard' %}">Request</a>
                                 </li>
                                 <li class="nav-item me-2">
                                     <a class="nav-link  {{ transactions_active }}"
@@ -87,7 +92,7 @@
                                        aria-expanded="false">
                                         My Account
                                     </a>
-                                    <ul class="dropdown-menu dropdown-menu-md-end">
+                                    <ul class="dropdown-menu dropdown-menu-lg-end">
                                         <li><a class="dropdown-item" href="{% url 'dashboard' %}">Settings</a></li>
                                         <li>
                                             <hr class="dropdown-divider">

@@ -1,5 +1,6 @@
 from django import forms
 from .models import CustomUser
+from transactions.models import Balance, Currency
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
@@ -40,10 +41,31 @@ class CustomUserCreationForm(forms.ModelForm):
 
     def save(self, commit=True):
         if commit:
-            self.user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'),username=self.cleaned_data.get('username'),first_name=self.cleaned_data.get('first_name'),last_name=self.cleaned_data.get('last_name'),currency=self.cleaned_data.get('currency'),password=self.cleaned_data.get('password2'))
-            return user
-        else:
-            user = CustomUser.objects.create_user_without_save(email=self.cleaned_data.get('email'),username=self.cleaned_data.get('username'),first_name=self.cleaned_data.get('first_name'),last_name=self.cleaned_data.get('last_name'),currency=self.cleaned_data.get('currency'),password=self.cleaned_data.get('password2'))
+            user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'),
+                                                  username=self.cleaned_data.get('username'),
+                                                  first_name=self.cleaned_data.get('first_name'),
+                                                  last_name=self.cleaned_data.get('last_name'),
+                                                  currency=self.cleaned_data.get('currency'),
+                                                  password=self.cleaned_data.get('password2'))
+
+            # Only non admin users can have balance
+            if not user.is_admin:
+
+                # Get the conversion rates from GBP
+                gbp2usd = 1.20
+                gbp2eur = 1.13
+
+                # Assign the user equivalent of 1000 GBP in their selected currency
+                amount = 1000
+
+                match user.currency:
+                    case Currency.USD:
+                        amount = amount * gbp2usd
+                    case Currency.EUR:
+                        amount = amount * gbp2eur
+
+                Balance.objects.create(user=user, currency=user.currency, amount=amount)
+
             return user
 
     def save_m2m(self):
@@ -52,7 +74,6 @@ class CustomUserCreationForm(forms.ModelForm):
 
 # Administrator user creation form
 class CustomUserCreationFormAdmin(forms.ModelForm):
-
     user = None
     is_admin = forms.BooleanField(label='Administrator', widget=forms.CheckboxInput(
         attrs={'readonly': 'readonly', 'checked': True}
@@ -61,7 +82,6 @@ class CustomUserCreationFormAdmin(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['username', 'first_name', 'last_name', 'email', 'is_admin']
-
 
     def clean_email(self):
         '''
@@ -75,9 +95,17 @@ class CustomUserCreationFormAdmin(forms.ModelForm):
 
     def save(self, commit=True):
         if commit:
-            self.user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'), username=self.cleaned_data.get('username'), first_name=self.cleaned_data.get('first_name'), last_name=self.cleaned_data.get('last_name'), is_admin=self.cleaned_data.get('is_admin'))
+            self.user = CustomUser.objects.create_user(email=self.cleaned_data.get('email'),
+                                                       username=self.cleaned_data.get('username'),
+                                                       first_name=self.cleaned_data.get('first_name'),
+                                                       last_name=self.cleaned_data.get('last_name'),
+                                                       is_admin=self.cleaned_data.get('is_admin'))
         else:
-            self.user = CustomUser.objects.create_user_without_save(email=self.cleaned_data.get('email'), username=self.cleaned_data.get('username'), first_name=self.cleaned_data.get('first_name'), last_name=self.cleaned_data.get('last_name'), is_admin=self.cleaned_data.get('is_admin'))
+            self.user = CustomUser.objects.create_user_without_save(email=self.cleaned_data.get('email'),
+                                                                    username=self.cleaned_data.get('username'),
+                                                                    first_name=self.cleaned_data.get('first_name'),
+                                                                    last_name=self.cleaned_data.get('last_name'),
+                                                                    is_admin=self.cleaned_data.get('is_admin'))
         return self.user
 
     def save_m2m(self):
@@ -94,7 +122,8 @@ class CustomUserChangeForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'currency', 'password', 'is_active', 'is_admin', 'change_password']
+        fields = ['username', 'first_name', 'last_name', 'email', 'currency', 'password', 'is_active', 'is_admin',
+                  'change_password']
 
     def clean_email(self):
         '''
@@ -107,7 +136,7 @@ class CustomUserChangeForm(forms.ModelForm):
 
         # Skip the qs length check as emails are unique -> length == 1
         if qs.exists():
-            raise forms.ValidationError("Another account is already registered with this email")
+            raise forms.ValidationError("An account is already registered with this email")
 
         return email
 
@@ -125,5 +154,3 @@ class CustomUserChangeForm(forms.ModelForm):
             raise forms.ValidationError("This username isn't available")
 
         return username
-
-

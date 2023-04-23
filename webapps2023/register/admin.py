@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Balance
+from .models import CustomUser
 from .forms import CustomUserCreationForm, CustomUserCreationFormAdmin, CustomUserChangeForm
 from register.management.user_groups import UserGroups
 
@@ -15,10 +15,13 @@ class CustomUserAdmin(UserAdmin):
 
     # Fields to be used in displaying the CustomUser model
     # Override the definitions on the UserAdmin
-    list_display = ('id', 'email', 'username', 'first_name', 'last_name', 'currency', 'balance', 'is_admin', 'change_password', 'created_at')
+    list_display = (
+        'id', 'email', 'username', 'first_name', 'last_name', 'currency', 'balance', 'is_admin', 'change_password',
+        'created_at')
     list_filter = ('currency', 'is_admin')
     fieldsets = (
-        (None, {"fields": ("email", "username", "first_name", "last_name", "currency", "password", "is_active", 'change_password')}),
+        (None, {"fields": (
+            "email", "username", "first_name", "last_name", "currency", "password", "is_active", 'change_password')}),
         ("Permissions", {"fields": ("groups", "user_permissions")}),
     )
     admin_readonly_fields = ("currency", "groups", "user_permissions")
@@ -51,7 +54,7 @@ class CustomUserAdmin(UserAdmin):
         if request.user.groups.filter(name=UserGroups.ADMINS):
             return self.admin_readonly_fields
         else:
-            return super(CustomUserAdmin, self).get_readonly_fields(request,obj=obj)
+            return super(CustomUserAdmin, self).get_readonly_fields(request, obj=obj)
 
     def response_add(self, request, obj, post_url_continue=None):
         # Generate a random password for the administrator
@@ -65,16 +68,3 @@ class CustomUserAdmin(UserAdmin):
 
 
 admin.site.register(CustomUser, CustomUserAdmin)
-
-
-class BalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'get_userid', 'currency', 'amount')
-    search_fields = ('id', 'get_userid', 'currency')
-    list_per_page = 10
-
-    @admin.display(ordering='user__id', description='UserID')
-    def get_userid(self, obj):
-        return obj.user.id
-
-
-admin.site.register(Balance, BalanceAdmin)
