@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block local_stylesheet %}
+    <link href={% static "transactions/css/balance_transfer.css" %} rel="stylesheet">
+{% endblock %}
+
+{% block title %}
+    Send Money
+{% endblock %}
+
+{% block account_nav %}
+    {% with logged_in=user.is_authenticated request_active='active' %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <h1 class="section__heading h1">Request a payment</h1>
+
+        <div class="row w-100 justify-content-center">
+            <form class="balance-transfer-form card col-12 col-md-5 p-3 mt-3" method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="balance-transfer-form__text-input col-12">
+                        {{ form.recipient_email|as_crispy_field }}
+                    </div>
+                    <div class="balance-transfer-form__text-input col-12">
+                        {{ form.amount|as_crispy_field }}
+                    </div>
+                    <div class="balance-transfer-form__text-input col-12">
+                        {{ form.currency|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <button type="submit"
+                            class="balance-transfer-form__submit btn btn-success mt-3 col-10 col-sm-6 col-lg-5">
+                        Make a request
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% if form.errors %}
+            <div class="login-error">
+                {% for error in form.errors %}
+                    <p class="login-error__message text-danger">{{ error.message }} </p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="alert alert-danger alert-dismissable fade show mt-2" role="alert">
+                    {{ message }}
+                    <a type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}

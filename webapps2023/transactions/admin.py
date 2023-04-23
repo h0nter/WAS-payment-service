@@ -1,5 +1,5 @@
 from django.contrib import admin
-from transactions.models import Balance, BalanceTransfer
+from transactions.models import Balance, BalanceTransfer, PaymentRequest
 
 
 class BalanceTransferAdmin(admin.ModelAdmin):
@@ -23,3 +23,14 @@ class BalanceAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Balance, BalanceAdmin)
+
+
+class PaymentRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'sender_email', 'recipient_email', 'currency', 'amount', 'start_date', 'status', 'closed_date')
+    list_filter = ('currency', 'status')
+    search_fields = ('id', 'sender_email', 'recipient_email', 'currency', 'amount', 'start_date')
+    list_per_page = 10
+
+
+admin.site.register(PaymentRequest, PaymentRequestAdmin)

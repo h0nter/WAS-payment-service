@@ -28,3 +28,25 @@ class BalanceTransfer(models.Model):
     class Meta:
         verbose_name = "Transfer"
         verbose_name_plural = "Transfers"
+
+
+class RequestStatus(models.TextChoices):
+    PND = 'PND', 'Pending'
+    ACC = 'ACC', 'Accepted'
+    DEC = 'DEC', 'Declined'
+
+
+class PaymentRequest(models.Model):
+    sender_email = models.EmailField('sender email', max_length=254)
+    recipient_email = models.EmailField('recipient email', max_length=254)
+    currency = models.CharField(max_length=3, choices=constants.Currency.choices, default=constants.Currency.GBP)
+    amount = models.DecimalField(max_digits=constants.MAX_DIGITS, decimal_places=2, default=0.00)
+    start_date = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=3, choices=RequestStatus.choices, default=RequestStatus.PND)
+    closed_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f'User: {self.sender_email} requested {self.amount} {self.currency}, ' \
+               f'from: {self.recipient_email}, on: {self.start_date.date()}, ' \
+               f'at: {self.start_date.strftime("%H:%M:%S")}, status: {self.status},' \
+               f'closed: {self.closed_date}'

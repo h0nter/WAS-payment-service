@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block local_stylesheet %}
+    {#    <link href={% static "register/css/register.css" %} rel="stylesheet">#}
+{% endblock %}
+
+{% block title %}
+    Send Money
+{% endblock %}
+
+{% block account_nav %}
+    {% with logged_in=user.is_authenticated %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <h1 class="section__heading h1">Make a payment</h1>
+        <div class="alert alert-success mt-5 mb-2 p-3" role="alert">
+            <h5>Request has been sent!</h5>
+            <p class="text-justify">
+                You'll receive a notification once the request has been accepted by the recipient and paid into your
+                account.
+            </p>
+        </div>
+        <p class="text-justify">
+            View your <a href="{% url 'dashboard' %}">requests</a>.
+        </p>
+    </div>
+{% endblock %}

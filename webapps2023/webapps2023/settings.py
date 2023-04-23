@@ -146,3 +146,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     # Add any origins which need to make requests to the REST API from outside the app.
 ]
+
+# Session settings
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Ensure session expires when browser closed
+
+SESSION_COOKIE_AGE = 60 * 3  # Ensure a user is logged out after 3 minutes of inactivity
+
+SESSION_SAVE_EVERY_REQUEST = True

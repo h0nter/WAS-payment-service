@@ -7,7 +7,7 @@ from decimal import Decimal
 from .models import Balance
 import transactions.constants as constants
 from .utils import convert_currency, round_up_2dp
-from .forms import BalanceTransferForm
+from .forms import BalanceTransferForm, PaymentRequestForm
 
 
 @login_required
@@ -83,3 +83,22 @@ def balance_transfer(request):
         form = BalanceTransferForm(request=request)
 
     return render(request, "transactions/balance_transfer.html", {"form": form, "user": request.user})
+
+
+@login_required
+@allow_customer_redirect_admin
+def payment_request(request):
+    if request.method == 'POST':
+        form = PaymentRequestForm(request.POST, request=request)
+
+        if form.is_valid():
+            # Create a Notification for the target user
+
+            form.save()
+
+            return render(request, "transactions/request_success.html", {"user": request.user})
+
+    else:
+        form = PaymentRequestForm(request=request)
+
+    return render(request, "transactions/payment_request.html", {"form": form, "user": request.user})

@@ -52,9 +52,9 @@
                                        href="{% url 'transfer' %}">Send</a>
                                 </li>
                                 <li class="nav-item me-2">
-                                    <a class="nav-link  {{ transactions_active }}"
+                                    <a class="nav-link  {{ request_active }}"
                                        {% if transactions_active %}aria-current="page"{% endif %}
-                                       href="{% url 'dashboard' %}">Request</a>
+                                       href="{% url 'request' %}">Request</a>
                                 </li>
                                 <li class="nav-item me-2">
                                     <a class="nav-link  {{ transactions_active }}"
