@@ -3,7 +3,8 @@ from transactions.models import Balance, BalanceTransfer
 
 
 class BalanceTransferAdmin(admin.ModelAdmin):
-    list_display = ('id', 'sender_email', 'recipient_email', 'currency', 'amount')
+    list_display = ('id', 'sender_email', 'recipient_email', 'currency', 'amount', 'date')
+    list_filter = ('currency',)
     search_fields = ('id', 'sender_email', 'recipient_email')
     list_per_page = 10
 
@@ -12,8 +13,8 @@ admin.site.register(BalanceTransfer, BalanceTransferAdmin)
 
 
 class BalanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'get_userid', 'currency', 'amount')
-    search_fields = ('id', 'get_userid', 'currency')
+    list_display = ('id', 'user', 'currency', 'amount')
+    search_fields = ('id', 'user', 'currency')
     list_per_page = 10
 
     @admin.display(ordering='user__id', description='UserID')

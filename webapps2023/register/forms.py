@@ -1,6 +1,7 @@
 from django import forms
 from .models import CustomUser
-from transactions.models import Balance, Currency
+from transactions.models import Balance
+from transactions.constants import Currency
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError

@@ -9,12 +9,12 @@
     --bs-danger-rgb: 255, 107, 107;
     --bs-danger-text: #954B4C;
     --bs-danger-text-rgb: 149, 75, 76;
-    --bs-green: #198754;
+    --bs-green: #3f6c51;
     --bs-green-rgb: 63, 108, 81;
     --bs-success: #3f6c51;
     --bs-success-rgb: 63, 108, 81;
-    --bs-success-text: #f5f5f5;
-    --bs-success-text-rgb: 245, 245, 245;
+    --bs-success-text: #3f6c51;
+    --bs-success-text-rgb: 63, 108, 81;
 }
 
 html {

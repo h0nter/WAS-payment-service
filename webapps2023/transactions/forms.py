@@ -1,7 +1,8 @@
 from django import forms
 from .models import BalanceTransfer, Balance
-from .constants import Currency
-from .utils import convert_currency
+import transactions.constants as constants
+from .utils import convert_currency, round_up_2dp
+from decimal import Decimal
 from register.models import CustomUser
 
 
@@ -44,6 +45,9 @@ class BalanceTransferForm(forms.ModelForm):
         if amount <= 0:
             raise forms.ValidationError("The amount must be greater than 0.00")
 
+        if amount > constants.MAX_AMOUNT:
+            raise forms.ValidationError(f'The transferred amount cannot exceed {constants.MAX_AMOUNT}')
+
         if self.request is not None:
             user = self.request.user
 
@@ -53,7 +57,7 @@ class BalanceTransferForm(forms.ModelForm):
 
                 currency = self.cleaned_data.get('currency')
 
-                req_amount = convert_currency(currency, user.currency, amount)
+                req_amount = Decimal(round_up_2dp(convert_currency(currency, user.currency, amount)))
 
                 if balance and not balance.amount >= req_amount:
                     raise forms.ValidationError("Insufficient funds to complete the transfer.")

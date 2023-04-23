@@ -27,3 +27,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         "Is the user a member of staff?"
         # Simplest possible answer: All admins are staff
         return self.is_admin or self.is_superuser
+
+    def __str__(self):
+        return self.email
+
+    class Meta:
+        verbose_name = "User"
+        verbose_name_plural = "Users"
