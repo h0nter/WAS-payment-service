@@ -36,14 +36,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Django extensions to enable SSL
+    'django_extensions',
     # Django package, enable CORS service
     'corsheaders',
+    # Django package REST API framework
+    'rest_framework',
     # Forms rendering with Bootstrap 5
     'crispy_forms',
     'crispy_bootstrap5',
     # Apps
     'register',
     'transactions'
+    'conversion'
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
@@ -153,3 +158,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Ensure session expires when browser cl
 SESSION_COOKIE_AGE = 60 * 3  # Ensure a user is logged out after 3 minutes of inactivity
 
 SESSION_SAVE_EVERY_REQUEST = True
+
+# Configure runserver_plus
+RUNSERVERPLUS_SERVER_ADDRESS_PORT = '127.0.0.1:8000'
+
+RUNSERVERPLUS_POLLER_RELOADER_INTERVAL = 5

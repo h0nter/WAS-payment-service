@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.views import LoginView, PasswordChangeView, TemplateView
 from django.contrib.auth import login
 from django.contrib import messages
@@ -12,7 +13,8 @@ from django.core.exceptions import PermissionDenied
 from .forms import CustomUserCreationForm
 from transactions.models import Balance
 from transactions.utils import get_notifications
-from .decorators import allow_customer_redirect_admin, redirect_if_logged_in
+from .management.user_groups import UserGroups
+from .decorators import check_user_is_in_group, allow_customer_redirect_admin, redirect_if_logged_in
 
 
 @method_decorator([redirect_if_logged_in], name='dispatch')
@@ -24,7 +26,7 @@ class CustomTemplateView(TemplateView):
         return context
 
 
-@method_decorator([redirect_if_logged_in], name='dispatch')
+@method_decorator([redirect_if_logged_in, csrf_protect], name='dispatch')
 # User login
 class CustomLoginView(LoginView):
     template_name = 'register/login.html'
@@ -42,6 +44,7 @@ class CustomLoginView(LoginView):
             return self.handle_no_permission()
 
 
+@method_decorator([redirect_if_logged_in, csrf_protect], name='dispatch')
 # Admin Login
 class CustomLoginViewAdmin(LoginView):
     template_name = 'register/admin_login.html'
@@ -55,7 +58,7 @@ class CustomLoginViewAdmin(LoginView):
             # Call the parent dispatch method to handle the login
             return super().dispatch(request, *args, **kwargs)
         except PermissionDenied:
-            # Handle the PermissionDenied exception if the user is an admin
+            # Handle the PermissionDenied exception if the user is a customer
             return self.handle_no_permission()
 
     # Users' authenticated - need to log them in
@@ -88,6 +91,7 @@ class CustomLoginViewAdmin(LoginView):
         return ValidationError("There was a problem logging you in, please try again.")
 
 
+@method_decorator([check_user_is_in_group(UserGroups.ADMINS), csrf_protect], name='dispatch')
 class CustomPasswordChangeViewAdmin(PasswordChangeView):
 
     def get_form_kwargs(self):
@@ -106,6 +110,7 @@ class CustomPasswordChangeViewAdmin(PasswordChangeView):
 
 
 @redirect_if_logged_in
+@csrf_protect
 # User registration view
 def sign_up(request):
     form = CustomUserCreationForm(request.POST or None)
@@ -124,11 +129,8 @@ def sign_up(request):
 @login_required
 @allow_customer_redirect_admin
 def user_dashboard(request):
-    # Make sure that only 'GET' requests are allowed to the dashboard
-    if request.method == 'GET':
-        user = request.user
-        balance = Balance.objects.get(user=user)
-        return render(request, 'register/dashboard.html',
-                      context={'user': user, "notifications": get_notifications(user), 'balance': balance})
-    else:
-        return HttpResponseNotAllowed(['GET'])
+    # Render the dashboard
+    user = request.user
+    balance = Balance.objects.get(user=user)
+    return render(request, 'register/dashboard.html',
+                  context={'user': user, "notifications": get_notifications(user), 'balance': balance})

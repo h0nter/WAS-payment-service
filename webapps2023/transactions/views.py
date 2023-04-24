@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.urls import reverse
@@ -33,6 +34,7 @@ def create_request_notification(recipient, notification_type, request_obj):
 
 @login_required
 @allow_customer_redirect_admin
+@csrf_protect
 def balance_transfer(request):
     if request.method == 'POST':
         form = BalanceTransferForm(request.POST, request=request)
@@ -117,6 +119,7 @@ def balance_transfer(request):
 
 @login_required
 @allow_customer_redirect_admin
+@csrf_protect
 def payment_request(request):
     if request.method == 'POST':
         form = PaymentRequestForm(request.POST, request=request)
@@ -237,6 +240,7 @@ def requests_list(request):
 
 @login_required
 @allow_customer_redirect_admin
+@csrf_protect
 def request_update_status(request, pk=0):
     user = request.user
 
