@@ -3,7 +3,8 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.db.models import Q
-from django.http import HttpResponseNotFound
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 from django.contrib import messages
 from functools import partial
 from register.decorators import allow_customer_redirect_admin
@@ -11,7 +12,7 @@ from decimal import Decimal
 from register.models import CustomUser
 from .models import Balance, BalanceTransfer, Notification, PaymentRequest
 import transactions.constants as constants
-from .utils import convert_currency, round_up_2dp
+from .utils import convert_currency, round_up_2dp, get_notifications
 from .forms import BalanceTransferForm, PaymentRequestForm, PaymentRequestUpdateForm
 
 
@@ -104,12 +105,14 @@ def balance_transfer(request):
 
             # If transaction was completed, show success message
             if success:
-                return render(request, "transactions/transfer_success.html", {"user": request.user})
+                return render(request, "transactions/transfer_success.html",
+                              {"user": request.user, "notifications": get_notifications(request.user)})
 
     else:
         form = BalanceTransferForm(request=request)
 
-    return render(request, "transactions/balance_transfer.html", {"form": form, "user": request.user})
+    return render(request, "transactions/balance_transfer.html",
+                  {"form": form, "user": request.user, "notifications": get_notifications(request.user)})
 
 
 @login_required
@@ -147,12 +150,14 @@ def payment_request(request):
                                'We encountered some problems with making this request, please try again later.')
 
             if success:
-                return render(request, "transactions/request_success.html", {"user": request.user})
+                return render(request, "transactions/request_success.html",
+                              {"user": request.user, "notifications": get_notifications(request.user)})
 
     else:
         form = PaymentRequestForm(request=request)
 
-    return render(request, "transactions/payment_request.html", {"form": form, "user": request.user})
+    return render(request, "transactions/payment_request.html",
+                  {"form": form, "user": request.user, "notifications": get_notifications(request.user)})
 
 
 @login_required
@@ -184,7 +189,8 @@ def transactions_list(request):
         transactions_processed.append(tp)
 
     return render(request, 'transactions/transactions_list.html',
-                  context={"user": user, "transactions": transactions_processed})
+                  context={"user": user, "notifications": get_notifications(user),
+                           "transactions": transactions_processed})
 
 
 @login_required
@@ -225,7 +231,8 @@ def requests_list(request):
             requests_history.append(tp)
 
     return render(request, 'transactions/requests_list.html',
-                  context={"user": user, "requests_history": requests_history, "requests_pending": requests_pending})
+                  context={"user": user, "notifications": get_notifications(user), "requests_history": requests_history,
+                           "requests_pending": requests_pending})
 
 
 @login_required
@@ -236,7 +243,7 @@ def request_update_status(request, pk=0):
     qs = PaymentRequest.objects.filter(id=pk, recipient_email=user.email, closed_date=None)
 
     if not qs.exists():
-        return HttpResponseNotFound()
+        return HttpResponseRedirect(reverse('requests'))
 
     pr = qs.get(id=pk)
 
@@ -333,7 +340,8 @@ def request_update_status(request, pk=0):
 
                 # If transaction was completed, show success message
                 if success:
-                    return render(request, "transactions/transfer_success.html", {"user": request.user})
+                    return render(request, "transactions/transfer_success.html",
+                                  {"user": request.user, "notifications": get_notifications(user)})
 
             elif 'request_decline' in request.POST:  # Payment Request Declined
 
@@ -365,9 +373,11 @@ def request_update_status(request, pk=0):
                                    'We encountered some problems with declining this request, please try again later.')
 
                 if success:
-                    return render(request, "transactions/request_declined.html", {"user": request.user})
+                    return render(request, "transactions/request_declined.html",
+                                  {"user": request.user, "notifications": get_notifications(user)})
 
     else:
         form = PaymentRequestUpdateForm(request=request, payment_request=pr)
 
-    return render(request, 'transactions/request_update_status.html', context={"user": user, "form": form})
+    return render(request, 'transactions/request_update_status.html',
+                  context={"user": user, "notifications": get_notifications(user), "form": form})

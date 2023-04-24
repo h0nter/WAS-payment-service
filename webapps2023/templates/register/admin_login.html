@@ -43,10 +43,6 @@
             </div>
         {% endif %}
 
-        <div class="password-reset">
-            <a href="{% url 'password_reset' %}" class="password-reset__link">Forgot your password?</a>
-        </div>
-
         {% for message in messages %}
             {% if message.tags == 'error' %}
                 <div class="alert alert-danger alert-dismissable fade show mt-2" role="alert">

@@ -10,34 +10,77 @@
           integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <!-- FontAwsome -->
     <script src="https://kit.fontawesome.com/c9d53137a5.js" crossorigin="anonymous"></script>
+    <!-- jQuery -->
+    <script
+            src="https://code.jquery.com/jquery-3.6.4.min.js"
+            integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8="
+            crossorigin="anonymous"></script>
+    <!-- Custom JS -->
+    <script src="{% static "global/script/script.js" %}" crossorigin="anonymous"></script>
     <!-- Favicon -->
-    <link href={% static "global/img/favicon.ico" %} rel="shortcut icon
-    ">
+    <link href="{% static "global/img/favicon.ico" %}" rel="shortcut icon">
     <!-- Icon tabs -->
-    <link href={% static "global/img/logo.ico" %} rel="shortcut icon
-    ">
+    <link href="{% static "global/img/logo.ico" %}" rel="shortcut icon">
     <!-- Static CSS -->
-    <link href={% static "global/css/global.css" %} rel="stylesheet">
+    <link href="{% static "global/css/global.css" %}" rel="stylesheet">
     <!-- Template specific CSS -->
     {% block local_stylesheet %}{% endblock %}
 </head>
 
 <body>
-<header>
-    <nav class="navbar sticky-top navbar-expand-lg navbar-dark navbar-sm bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand ms-lg-5 me-4" href="{% url 'home' %}">
-                <img src="{% static "global/img/logo@0.25x.png" %}" class="navbar-logo d-inline-block me-1" alt="logo">
-                <span class="navbar-brand__text align-middle">Payments</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse d-lg-flex flex-row justify-content-between align-items-center "
-                 id="navbarSupportedContent">
-                {% block account_nav %}
+{% block account_nav %}
+    {% if logged_in %}
+        <div id="notifications-bar"
+             class="notifications-list d-flex flex-column align-items-stretch flex-shrink-0 bg-white"
+             style="width: 380px;">
+            <div class="d-flex align-items-center justify-content-between flex-shrink-0 p-3 link-dark text-decoration-none border-bottom">
+                <span class="fs-5 fw-semibold">Notifications</span>
+                <button class="notifications-list__button notifications-list__button--hide"
+                        onclick="notificationsClose(this)">
+                    <i class="fa-solid fa-angle-right"></i>
+                </button>
+            </div>
+            <div class="list-group list-group-flush border-bottom notifications-list__scrollarea">
+                {% if notifications %}
+                    {% for notification in notifications %}
+                        <a href="{{ notification.url }}" class="list-group-item list-group-item-action py-3 lh-tight">
+                            <div class="d-flex w-100 align-items-center justify-content-between">
+                                <strong class="mb-1">{{ notification.type }}</strong>
+                                <small>{{ notification.date }}</small>
+                            </div>
+                            <div class="col-10 mb-1 small">
+                                <b>{{ notification.dir }}</b> {{ notification.user_email }}
+                            </div>
+                            <div class="col-10 mb-1 small">
+                                {{ notification.amount }} {{ notification.currency }}
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="d-flex flex-column justify-content-center align-items-center h-100">
+                        <p class="text-center text-secondary">
+                            Nothing to show.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+    <header>
+        <nav class="navbar sticky-top navbar-expand-lg navbar-dark navbar-sm bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand ms-lg-5 me-4" href="{% url 'home' %}">
+                    <img src="{% static "global/img/logo@0.25x.png" %}" class="navbar-logo d-inline-block me-1"
+                         alt="logo">
+                    <span class="navbar-brand__text align-middle">Payments</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse d-lg-flex flex-row justify-content-between align-items-center "
+                     id="navbarSupportedContent">
                     <div class="lhs-nav">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             {% if logged_in %}
@@ -82,23 +125,14 @@
                     <div class="rhs-nav">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0 d-flex justify-content-center align-items-center">
                             {% if logged_in %}
-                                <li class="nav-item me-1">
-                                    <button class="navbar__icon">
+                                <li class="nav-item me-3">
+                                    <button class="navbar__icon" onclick="notificationsOpen()">
                                         <i class="fa-solid fa-bell"></i>
                                     </button>
                                 </li>
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                                       aria-expanded="false">
-                                        My Account
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-lg-end">
-                                        <li><a class="dropdown-item" href="{% url 'dashboard' %}">Settings</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item" href="{% url 'logout' %}">Log out</a></li>
-                                    </ul>
+                                <li class="nav-item">
+                                    <a class="nav-link"
+                                       href="{% url 'logout' %}">Log out</a>
                                 </li>
                             {% else %}
                                 <li class="nav-item me-2">
@@ -111,11 +145,11 @@
                             {% endif %}
                         </ul>
                     </div>
-                {% endblock %}
+                </div>
             </div>
-        </div>
-    </nav>
-</header>
+        </nav>
+    </header>
+{% endblock %}
 <div class="wrapper">
     <div class="content mb-3 mt-3">
         <!-- ===== Block content (ROOT) ===== -->
@@ -130,6 +164,8 @@
         </div>
     </div>
 </div>
+
+<!-- jQuery -->
 
 <!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"

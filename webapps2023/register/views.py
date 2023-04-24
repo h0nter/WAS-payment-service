@@ -11,8 +11,8 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from .forms import CustomUserCreationForm
 from transactions.models import Balance
+from transactions.utils import get_notifications
 from .decorators import allow_customer_redirect_admin, redirect_if_logged_in
-from .management.user_groups import UserGroups
 
 
 @method_decorator([redirect_if_logged_in], name='dispatch')
@@ -128,6 +128,7 @@ def user_dashboard(request):
     if request.method == 'GET':
         user = request.user
         balance = Balance.objects.get(user=user)
-        return render(request, 'register/dashboard.html', context={'user': user, 'balance': balance})
+        return render(request, 'register/dashboard.html',
+                      context={'user': user, "notifications": get_notifications(user), 'balance': balance})
     else:
         return HttpResponseNotAllowed(['GET'])
