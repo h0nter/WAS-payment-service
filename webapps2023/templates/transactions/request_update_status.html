@@ -3,41 +3,49 @@
 {% load static %}
 
 {% block title %}
-    Send Money
+    Payment Request
 {% endblock %}
 
 {% block account_nav %}
-    {% with logged_in=user.is_authenticated send_active='active' %}
+    {% with logged_in=user.is_authenticated requests_active='active' %}
         {{ block.super }}
     {% endwith %}
 {% endblock %}
 
 {% block content %}
     <div class="section container">
-        <h1 class="section__heading h1">Transfer Money</h1>
+        <h1 class="section__heading h1">Respond to the request</h1>
 
         <div class="row w-100 justify-content-center">
-            <form class="balance-transfer-form card col-12 col-md-5 p-3 mt-3" method="POST">
+            <form class="payment-request-form card col-12 col-md-5 p-3 mt-3" method="POST">
                 {% csrf_token %}
                 <div class="row">
-                    <div class="balance-transfer-form__text-input col-12">
-                        {{ form.recipient_email|as_crispy_field }}
+                    <div class="payment-request-form__text-input col-12">
+                        {{ form.sender_email|as_crispy_field }}
                     </div>
-                    <div class="balance-transfer-form__text-input col-12">
+                    <div class="payment-request-form__text-input col-12">
                         {{ form.amount|as_crispy_field }}
                     </div>
-                    <div class="balance-transfer-form__text-input col-12">
+                    <div class="payment-request-form__text-input col-12">
                         {{ form.currency|as_crispy_field }}
                     </div>
-                    <div class="balance-transfer-form__text-input col-12">
+                    <div class="payment-request-form__text-input col-12">
                         {{ form.description|as_crispy_field }}
                     </div>
                 </div>
-                <div class="row justify-content-center">
-                    <button type="submit"
-                            class="balance-transfer-form__submit btn btn-success mt-3 col-10 col-sm-6 col-lg-5">
-                        Transfer
-                    </button>
+                <div class="row justify-content-center align-items-center">
+                    <div class="col-12 col-sm-6 col-lg-5">
+                        <button type="submit" name="request_decline" value="declined"
+                                class="payment-request-form__submit btn btn-danger mt-3 w-100">
+                            Decline
+                        </button>
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-5">
+                        <button type="submit" name="request_accept" value="accepted"
+                                class="payment-request-form__submit btn btn-success mt-3 w-100">
+                            Accept
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

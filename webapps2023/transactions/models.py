@@ -31,12 +31,6 @@ class BalanceTransfer(models.Model):
         verbose_name_plural = "Transfers"
 
 
-class RequestStatus(models.TextChoices):
-    PND = 'PND', 'Pending'
-    ACC = 'ACC', 'Accepted'
-    DEC = 'DEC', 'Declined'
-
-
 class PaymentRequest(models.Model):
     sender_email = models.EmailField('sender email', max_length=254)
     recipient_email = models.EmailField('recipient email', max_length=254)
@@ -44,7 +38,8 @@ class PaymentRequest(models.Model):
     amount = models.DecimalField(max_digits=constants.MAX_DIGITS, decimal_places=2, default=0.00)
     description = models.CharField(max_length=50, default='')
     start_date = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=3, choices=RequestStatus.choices, default=RequestStatus.PND)
+    status = models.CharField(max_length=3, choices=constants.RequestStatus.choices,
+                              default=constants.RequestStatus.PND)
     closed_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

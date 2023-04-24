@@ -1,4 +1,6 @@
 from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Submit
 from .models import BalanceTransfer, Balance, PaymentRequest
 import transactions.constants as constants
 from .utils import convert_currency, round_up_2dp
@@ -94,6 +96,36 @@ class BalanceTransferForm(forms.ModelForm):
                     return bt
 
         raise forms.ValidationError("There was a problem processing your request, please try again.")
+
+
+class PaymentRequestUpdateForm(forms.ModelForm):
+    class Meta:
+        model = PaymentRequest
+        fields = ['sender_email', 'amount', 'currency', 'description']
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        self.payment_request = kwargs.pop('payment_request', None)
+        super(PaymentRequestUpdateForm, self).__init__(*args, **kwargs)
+        self.fields['sender_email'] = forms.EmailField(disabled=True,
+                                                       initial=self.payment_request.sender_email)
+        self.fields['amount'] = forms.IntegerField(disabled=True,
+                                                   initial=self.payment_request.amount)
+        self.fields['currency'] = forms.CharField(max_length=3, disabled=True,
+                                                  initial=self.payment_request.currency)
+        self.fields['description'] = forms.CharField(max_length=50, disabled=True,
+                                                     initial=self.payment_request.description, required=False)
+
+    def clean_amount(self):
+        balance = Balance.objects.get(user=self.request.user)
+
+        req_amount = Decimal(round_up_2dp(
+            convert_currency(self.payment_request.currency, self.request.user.currency, self.payment_request.amount)))
+
+        if balance and req_amount > balance.amount:
+            raise forms.ValidationError("Insufficient funds to accept this request.")
+
+        return self.cleaned_data.get('amount')
 
 
 class PaymentRequestForm(forms.ModelForm):

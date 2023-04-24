@@ -53,18 +53,18 @@
                                 </li>
                                 <li class="nav-item me-2">
                                     <a class="nav-link  {{ request_active }}"
-                                       {% if transactions_active %}aria-current="page"{% endif %}
-                                       href="{% url 'request' %}">Request</a>
+                                       {% if request_active %}aria-current="page"{% endif %}
+                                       href="{% url 'request_payment' %}">Request</a>
                                 </li>
                                 <li class="nav-item me-2">
                                     <a class="nav-link  {{ transactions_active }}"
                                        {% if transactions_active %}aria-current="page"{% endif %}
-                                       href="{% url 'dashboard' %}">Transactions</a>
+                                       href="{% url 'transactions' %}">Transactions</a>
                                 </li>
                                 <li class="nav-item me-2">
-                                    <a class="nav-link  {{ transactions_active }}"
-                                       {% if transactions_active %}aria-current="page"{% endif %}
-                                       href="{% url 'dashboard' %}">Requests</a>
+                                    <a class="nav-link  {{ requests_active }}"
+                                       {% if requests_active %}aria-current="page"{% endif %}
+                                       href="{% url 'requests' %}">Requests</a>
                                 </li>
                             {% else %}
                                 <li class="nav-item me-2">

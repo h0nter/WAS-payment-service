@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block account_nav %}
-    {% with logged_in=user.is_authenticated %}
+    {% with logged_in=user.is_authenticated send_active='active' %}
         {{ block.super }}
     {% endwith %}
 {% endblock %}

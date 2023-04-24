@@ -1,15 +1,24 @@
 from django.shortcuts import render
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
+from django.db.models import Q
+from django.http import HttpResponseForbidden
 from django.contrib import messages
 from functools import partial
 from register.decorators import allow_customer_redirect_admin
 from decimal import Decimal
 from register.models import CustomUser
-from .models import Balance, Notification
+from .models import Balance, BalanceTransfer, Notification, PaymentRequest
 import transactions.constants as constants
 from .utils import convert_currency, round_up_2dp
-from .forms import BalanceTransferForm, PaymentRequestForm
+from .forms import BalanceTransferForm, PaymentRequestForm, PaymentRequestUpdateForm
+
+
+def create_transfer_and_request_update_notifications(sender, recipient, transfer_obj, request_obj):
+    Notification.objects.create(user=sender, type=constants.NotificationType.SND, transfer=transfer_obj)
+    Notification.objects.create(user=recipient, type=constants.NotificationType.REC, transfer=transfer_obj)
+    Notification.objects.create(user=recipient, type=constants.NotificationType.RQU, request=request_obj)
 
 
 def create_transfer_notifications(sender, recipient, transfer_obj):
@@ -124,3 +133,191 @@ def payment_request(request):
         form = PaymentRequestForm(request=request)
 
     return render(request, "transactions/payment_request.html", {"form": form, "user": request.user})
+
+
+@login_required
+@allow_customer_redirect_admin
+def transactions_list(request):
+    user = request.user
+
+    transactions = BalanceTransfer.objects.filter(
+        Q(sender_email=user.email) | Q(recipient_email=user.email)).order_by('-created_at')
+
+    transactions_processed = []
+
+    for t in transactions:
+
+        if t.sender_email == user.email:
+            other_user_email = t.recipient_email
+            sign = False
+        else:
+            other_user_email = t.sender_email
+            sign = True
+
+        tp = {'date': t.created_at.date(),
+              'user_email': other_user_email,
+              'description': t.description,
+              'currency': t.currency,
+              'amount': t.amount,
+              'sign': sign}
+
+        transactions_processed.append(tp)
+
+    return render(request, 'transactions/transactions_list.html',
+                  context={"user": user, "transactions": transactions_processed})
+
+
+@login_required
+@allow_customer_redirect_admin
+def requests_list(request):
+    user = request.user
+
+    requests = PaymentRequest.objects.filter(
+        Q(sender_email=user.email) | Q(recipient_email=user.email)).order_by('-start_date')
+
+    requests_processed = []
+
+    for r in requests:
+
+        if r.sender_email == user.email:
+            other_user_email = r.recipient_email
+            sign = True
+        else:
+            other_user_email = r.sender_email
+            sign = False
+
+        tp = {'date': r.start_date.date(),
+              'user_email': other_user_email,
+              'description': r.description,
+              'currency': r.currency,
+              'amount': r.amount,
+              'sign': sign,
+              'status': constants.RequestStatus(r.status).label}
+
+        requests_processed.append(tp)
+
+    return render(request, 'transactions/requests_list.html',
+                  context={"user": user, "requests": requests_processed})
+
+
+@login_required
+@allow_customer_redirect_admin
+def request_update_status(request, pk=0):
+    user = request.user
+
+    qs = PaymentRequest.objects.filter(id=pk, recipient_email=user.email, closed_date=None)
+
+    if not qs.exists():
+        return HttpResponseForbidden()
+
+    pr = qs.get(id=pk)
+
+    if request.method == 'POST':
+
+        form = PaymentRequestUpdateForm(request.POST, request=request, payment_request=pr)
+
+        # Check if user has sufficient funds to accept the transfer
+        if form.is_valid():
+            if 'request_accept' in request.POST:
+                # Start transaction
+                # Check if the user still has sufficient funds to accept the request
+                # Transfer the funds based on the request
+                # Update the request status + date
+                # On transaction commit - send payment notifications and request accepted notification
+
+                # This block makes no connection/changes to the db, if it fails, simply return an error
+
+                # NOTICE! We flip the sender and recipient as we're transferring money now
+
+                # Fetch sender data and calculate the transaction amount to subtract
+                sender_user = request.user
+                sender_currency = sender_user.currency
+
+                # Fetch the recipient's data
+                recipient_email = pr.sender_email
+                recipient_user = CustomUser.objects.get(email=recipient_email)
+                recipient_currency = recipient_user.currency
+
+                # Calculate the amounts to subtract/add in the transaction
+                transfer_amount = pr.amount
+                transfer_currency = pr.currency
+
+                # Calculate the amount to subtract from the sender's account
+                # always round up, as we don't want to end up subtracting less money than is added to the recipient
+                # this won't have any effect if the currencies match
+                sub_amount = Decimal(
+                    round_up_2dp(convert_currency(transfer_currency, sender_currency, transfer_amount)))
+
+                # Calculate the amount to subtract from the sender's account
+                # since the money out is rounded up already, we can simply round here
+                # this won't have any effect if the currencies match
+                add_amount = Decimal(round(convert_currency(transfer_currency, recipient_currency, transfer_amount), 2))
+
+                # Create the transfer object to store later in the database
+                transfer_obj = BalanceTransfer(sender_email=sender_user.email, recipient_email=recipient_email,
+                                               currency=transfer_currency, amount=transfer_amount,
+                                               description=pr.description)
+
+                sender_balance = Balance.objects.select_for_update().get(user=sender_user)
+                recipient_balance = Balance.objects.select_for_update().get(user__email=recipient_email)
+
+                # Get the payment request for updates
+                pay_request = PaymentRequest.objects.select_for_update().get(id=pr.id)
+
+                # A flag for transaction completed successfully
+                success = False
+
+                # Run this block in transaction, so either the whole transfer is completed,
+                # or fully rolled back to maintain integrity
+                try:
+                    with transaction.atomic():
+
+                        if sender_balance.amount < sub_amount:
+                            raise ValueError('Insufficient funds to complete the transfer.')
+
+                        sender_balance.amount = sender_balance.amount - sub_amount
+                        sender_balance.save()
+
+                        if (recipient_balance.amount + add_amount) > constants.MAX_AMOUNT:
+                            raise ValueError(
+                                'The amounts involved in this transaction exceed our limits. ' +
+                                'Please contact our technical support')
+                        recipient_balance.amount = recipient_balance.amount + add_amount
+                        recipient_balance.save()
+
+                        # Store the transfer object in the database
+                        transfer_obj.save()
+
+                        # Update request status to accepted
+                        pay_request.status = constants.RequestStatus.ACC
+                        pay_request.closed_date = timezone.now()
+                        pay_request.save()
+
+                        success = True
+
+                        # Send out the notifications to the users involved in the transaction
+                        transaction.on_commit(
+                            partial(create_transfer_and_request_update_notifications, sender=sender_user,
+                                    recipient=recipient_user,
+                                    transfer_obj=transfer_obj,
+                                    request_obj=pay_request))
+
+                except IntegrityError:
+                    # In case the transaction fails at any point, send an error message
+                    messages.error(request,
+                                   'We encountered some problems with completing your transfer, please try again later.')
+                except ValueError as e:
+                    messages.error(request, str(e))
+
+                # If transaction was completed, show success message
+                if success:
+                    return render(request, "transactions/transfer_success.html", {"user": request.user})
+            elif 'request_decline' in request.POST:
+                print('Request Declined')
+                # Update the request status + date
+                # send request declined notification
+
+    else:
+        form = PaymentRequestUpdateForm(request=request, payment_request=pr)
+
+    return render(request, 'transactions/request_update_status.html', context={"user": user, "form": form})

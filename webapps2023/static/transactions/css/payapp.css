@@ -1,0 +1,13 @@
+.transactions-list {
+    width: 100%;
+    max-height: 25rem;
+    overflow-y: scroll;
+}
+
+.transactions-list__amount--in {
+    color: #46ad63 !important;
+}
+
+.transactions-list__amount--out {
+    color: var(--bs-danger) !important;
+}

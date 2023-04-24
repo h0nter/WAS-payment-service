@@ -28,7 +28,14 @@ class Currency(TextChoices):
     EUR = 'EUR', 'EUR (Euro)'
 
 
+class RequestStatus(TextChoices):
+    PND = 'PND', 'Pending'
+    ACC = 'ACC', 'Accepted'
+    DEC = 'DEC', 'Declined'
+
+
 class NotificationType(TextChoices):
     REC = 'REC', 'Transfer received'
     SND = 'SND', 'Transferred'
     REQ = 'REQ', 'Request received'
+    RQU = 'RQU', 'Request update'

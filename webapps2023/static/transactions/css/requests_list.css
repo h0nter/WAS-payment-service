@@ -1,0 +1,11 @@
+.request-status--Pending {
+    color: #fdc210 !important;
+}
+
+.request-status--Accepted {
+    color: #46ad63 !important;
+}
+
+.request-status--Declined {
+    color: var(--bs-danger) !important;
+}
