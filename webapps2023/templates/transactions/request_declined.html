@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+    Payment Request
+{% endblock %}
+
+{% block account_nav %}
+    {% with logged_in=user.is_authenticated requests_active='active' %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock %}
+
+{% block content %}
+    <div class="section container">
+        <h1 class="section__heading h1">Request Declined</h1>
+        <div class="alert alert-warning mt-5 mb-2 p-3" role="alert">
+            <h5>Request declined</h5>
+            <p class="text-justify">
+                No money has left your account, we will notify the requesting user.
+            </p>
+        </div>
+        <p class="text-justify">
+            You can now return to your <a href="{% url 'requests' %}">requests</a> page.
+        </p>
+    </div>
+{% endblock %}

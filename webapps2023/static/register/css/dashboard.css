@@ -19,54 +19,7 @@
     content: '\20AC';
 }
 
-.transactions-list {
-    max-height: 50rem;
-    overflow-y: scroll;
-}
-
-.transactions-list__item {
-    display: flex;
-    flex-direction: row;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid black;
-    border-radius: 10px;
-    background: transparent;
-}
-
-.transactions-list__item:hover {
-    background: white;
-    box-shadow: 0 3px 10px rgb(0 0 0 / 0.2);
-}
-
-.transactions-list__username {
+.panel__button--large {
     font-size: 1.5rem;
     font-weight: bold;
-}
-
-.transactions-list__amount {
-    font-size: 2rem;
-    font-weight: bold;
-}
-
-.transactions-list__amount--plus {
-    position: relative;
-    color: var(--bs-success);
-}
-
-.transactions-list__amount--plus::before {
-    content: '\002B';
-    position: absolute;
-    left: -30%;
-}
-
-.transactions-list__amount--minus {
-    position: relative;
-    color: var(--bs-danger);
-}
-
-.transactions-list__amount--minus::before {
-    content: '\002D';
-    position: absolute;
-    left: -20%;
 }

@@ -109,21 +109,28 @@ class PaymentRequestUpdateForm(forms.ModelForm):
         super(PaymentRequestUpdateForm, self).__init__(*args, **kwargs)
         self.fields['sender_email'] = forms.EmailField(disabled=True,
                                                        initial=self.payment_request.sender_email)
-        self.fields['amount'] = forms.IntegerField(disabled=True,
-                                                   initial=self.payment_request.amount)
+        self.fields['amount'] = forms.DecimalField(disabled=True,
+                                                   initial=self.payment_request.amount,
+                                                   decimal_places=2,
+                                                   max_digits=10)
         self.fields['currency'] = forms.CharField(max_length=3, disabled=True,
                                                   initial=self.payment_request.currency)
         self.fields['description'] = forms.CharField(max_length=50, disabled=True,
                                                      initial=self.payment_request.description, required=False)
 
     def clean_amount(self):
-        balance = Balance.objects.get(user=self.request.user)
+        declined = self.data.get('request_decline')
 
-        req_amount = Decimal(round_up_2dp(
-            convert_currency(self.payment_request.currency, self.request.user.currency, self.payment_request.amount)))
+        # If the user declined the request, no need to check anything
+        if not declined:
+            balance = Balance.objects.get(user=self.request.user)
 
-        if balance and req_amount > balance.amount:
-            raise forms.ValidationError("Insufficient funds to accept this request.")
+            req_amount = Decimal(round_up_2dp(
+                convert_currency(self.payment_request.currency, self.request.user.currency,
+                                 self.payment_request.amount)))
+
+            if balance and req_amount > balance.amount:
+                raise forms.ValidationError("Insufficient funds to accept this request.")
 
         return self.cleaned_data.get('amount')
 

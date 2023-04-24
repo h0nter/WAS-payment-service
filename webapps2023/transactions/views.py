@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.db.models import Q
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseNotFound
 from django.contrib import messages
 from functools import partial
 from register.decorators import allow_customer_redirect_admin
@@ -26,8 +26,8 @@ def create_transfer_notifications(sender, recipient, transfer_obj):
     Notification.objects.create(user=recipient, type=constants.NotificationType.REC, transfer=transfer_obj)
 
 
-def create_request_notification(recipient, request_obj):
-    Notification.objects.create(user=recipient, type=constants.NotificationType.REQ, request=request_obj)
+def create_request_notification(recipient, notification_type, request_obj):
+    Notification.objects.create(user=recipient, type=notification_type, request=request_obj)
 
 
 @login_required
@@ -119,15 +119,35 @@ def payment_request(request):
         form = PaymentRequestForm(request.POST, request=request)
 
         if form.is_valid():
-            pr = form.save()
 
+            # Get the recipient user object
             recipient_email = form.cleaned_data.get('recipient_email')
             recipient = CustomUser.objects.get(email=recipient_email)
 
-            # Create a Notification for the target user
-            create_request_notification(recipient=recipient, request_obj=pr)
+            # A flag to check if transaction was successful
+            success = False
 
-            return render(request, "transactions/request_success.html", {"user": request.user})
+            # Run this block in a transaction to make sure we only send notification if the request was created.
+            try:
+                with transaction.atomic():
+
+                    # Create the payment request
+                    pr = form.save()
+
+                    success = True
+
+                    # Create a Notification for the target user
+                    transaction.on_commit(partial(create_request_notification, recipient=recipient,
+                                                  notification_type=constants.NotificationType.REQ,
+                                                  request_obj=pr))
+
+            except IntegrityError:
+                # In case the transaction fails at any point, send an error message
+                messages.error(request,
+                               'We encountered some problems with making this request, please try again later.')
+
+            if success:
+                return render(request, "transactions/request_success.html", {"user": request.user})
 
     else:
         form = PaymentRequestForm(request=request)
@@ -175,29 +195,37 @@ def requests_list(request):
     requests = PaymentRequest.objects.filter(
         Q(sender_email=user.email) | Q(recipient_email=user.email)).order_by('-start_date')
 
-    requests_processed = []
+    requests_history = []
+    requests_pending = []
 
     for r in requests:
 
-        if r.sender_email == user.email:
+        if r.sender_email == user.email:  # Request made by the user
             other_user_email = r.recipient_email
-            sign = True
-        else:
+            sign = True  # Indicates whether the money is coming in or out
+        else:  # Request made to the user
             other_user_email = r.sender_email
             sign = False
 
-        tp = {'date': r.start_date.date(),
+        status = constants.RequestStatus(r.status)
+
+        tp = {'pk': r.id,
+              'date': r.start_date.date(),
               'user_email': other_user_email,
               'description': r.description,
               'currency': r.currency,
               'amount': r.amount,
               'sign': sign,
-              'status': constants.RequestStatus(r.status).label}
+              'status': status.label}
 
-        requests_processed.append(tp)
+        # Check if the request requires users' action
+        if not sign and status == constants.RequestStatus.PND:
+            requests_pending.append(tp)
+        else:
+            requests_history.append(tp)
 
     return render(request, 'transactions/requests_list.html',
-                  context={"user": user, "requests": requests_processed})
+                  context={"user": user, "requests_history": requests_history, "requests_pending": requests_pending})
 
 
 @login_required
@@ -208,7 +236,7 @@ def request_update_status(request, pk=0):
     qs = PaymentRequest.objects.filter(id=pk, recipient_email=user.email, closed_date=None)
 
     if not qs.exists():
-        return HttpResponseForbidden()
+        return HttpResponseNotFound()
 
     pr = qs.get(id=pk)
 
@@ -218,25 +246,19 @@ def request_update_status(request, pk=0):
 
         # Check if user has sufficient funds to accept the transfer
         if form.is_valid():
-            if 'request_accept' in request.POST:
-                # Start transaction
-                # Check if the user still has sufficient funds to accept the request
-                # Transfer the funds based on the request
-                # Update the request status + date
-                # On transaction commit - send payment notifications and request accepted notification
 
-                # This block makes no connection/changes to the db, if it fails, simply return an error
+            # NOTICE! We flip the sender and recipient as we're handling the request other way around now
 
-                # NOTICE! We flip the sender and recipient as we're transferring money now
+            # Fetch sender and recipient data
+            sender_user = request.user
+            sender_currency = sender_user.currency
 
-                # Fetch sender data and calculate the transaction amount to subtract
-                sender_user = request.user
-                sender_currency = sender_user.currency
+            # Fetch the recipient's data
+            recipient_email = pr.sender_email
+            recipient_user = CustomUser.objects.get(email=recipient_email)
+            recipient_currency = recipient_user.currency
 
-                # Fetch the recipient's data
-                recipient_email = pr.sender_email
-                recipient_user = CustomUser.objects.get(email=recipient_email)
-                recipient_currency = recipient_user.currency
+            if 'request_accept' in request.POST:  # Payment Request Accepted
 
                 # Calculate the amounts to subtract/add in the transaction
                 transfer_amount = pr.amount
@@ -312,10 +334,38 @@ def request_update_status(request, pk=0):
                 # If transaction was completed, show success message
                 if success:
                     return render(request, "transactions/transfer_success.html", {"user": request.user})
-            elif 'request_decline' in request.POST:
-                print('Request Declined')
-                # Update the request status + date
-                # send request declined notification
+
+            elif 'request_decline' in request.POST:  # Payment Request Declined
+
+                # Get the payment request for updates
+                pay_request = PaymentRequest.objects.select_for_update().get(id=pr.id)
+
+                # A flag for transaction completed successfully
+                success = False
+
+                # Run this block in a transaction to make sure the notification
+                # is sent only if the update was successful
+                try:
+                    with transaction.atomic():
+                        # Update request status to declined
+                        pay_request.status = constants.RequestStatus.DEC
+                        pay_request.closed_date = timezone.now()
+                        pay_request.save()
+
+                        success = True
+
+                        # Send out a request update notification to the users who made the request
+                        transaction.on_commit(partial(create_request_notification, recipient=recipient_user,
+                                                      notification_type=constants.NotificationType.RQU,
+                                                      request_obj=pay_request))
+
+                except IntegrityError:
+                    # In case the transaction fails at any point, send an error message
+                    messages.error(request,
+                                   'We encountered some problems with declining this request, please try again later.')
+
+                if success:
+                    return render(request, "transactions/request_declined.html", {"user": request.user})
 
     else:
         form = PaymentRequestUpdateForm(request=request, payment_request=pr)
