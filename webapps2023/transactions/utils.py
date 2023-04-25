@@ -1,55 +1,34 @@
-from math import ceil
+import requests
 from decimal import Decimal
 from django.urls import reverse
 import transactions.constants as constants
 from .models import Notification
 
 
-def convert_currency(base_currency: constants.Currency, target_currency: constants.Currency, amount: Decimal):
+def convert_currency(currency1: constants.Currency, currency2: constants.Currency, amount_in_currency1):
     '''
-    Converts the amount in base_currency to target_currency
-    :param base_currency: The original currency the amount is in.
-    :param target_currency: The target currency to obtain the new amount for.
-    :param amount: The amount in base_currency to convert.
-    :return: the amount in target_currency as a float. If currencies are the same, returns the original amount
+    Converts the amount in currency1 to currency2 using the conversion API
+    :param currency1: The original currency the amount is in.
+    :param currency2: The target currency to obtain the new amount for.
+    :param amount_in_currency1: The amount to convert.
+    :return: the amount in currency2 as a Decimal. If currencies are the same, returns the original amount
     '''
+    if currency1 == currency2:
+        return Decimal(amount_in_currency1), True
 
-    amount = float(amount)
+    req_url = f'{constants.CONVERSION_API_URL}{currency1}/{currency2}/{amount_in_currency1}'
 
-    if base_currency != target_currency:
+    converter_response = requests.get(req_url, verify='certificates/localhost.crt')
 
-        # Get the conversion rates
-        gbp2usd = 1.20
-        gbp2eur = 1.13
-        usd2gbp = 0.80
-        usd2eur = 0.90
-        eur2gbp = 0.89
-        eur2usd = 1.11
+    # Check if the conversion API request was successful
+    if converter_response.status_code == 200:
+        # If it was, unpack the message
+        converter_json = converter_response.json()
+    else:
+        # Otherwise, there was a problem with the conversion, abort the transaction
+        return Decimal(-1.0), False
 
-        match [base_currency, target_currency]:
-            case [constants.Currency.GBP, constants.Currency.USD]:
-                amount = amount * gbp2usd
-            case [constants.Currency.GBP, constants.Currency.EUR]:
-                amount = amount * gbp2eur
-            case [constants.Currency.USD, constants.Currency.GBP]:
-                amount = amount * usd2gbp
-            case [constants.Currency.USD, constants.Currency.EUR]:
-                amount = amount * usd2eur
-            case [constants.Currency.EUR, constants.Currency.GBP]:
-                amount = amount * eur2gbp
-            case [constants.Currency.EUR, constants.Currency.USD]:
-                amount = amount * eur2usd
-
-    return amount
-
-
-def round_up_2dp(number: float):
-    '''
-    Rounds the given number up to the nearest 2 decimal places
-    :param number: a float to round up
-    :return: the float rounded up to 2 d.p.
-    '''
-    return (ceil(number * 100)) / 100
+    return Decimal(converter_json['converted_amount']), True
 
 
 def get_notifications(user):

@@ -1,9 +1,7 @@
 from django import forms
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit
 from .models import BalanceTransfer, Balance, PaymentRequest
 import transactions.constants as constants
-from .utils import convert_currency, round_up_2dp
+from .utils import convert_currency
 from decimal import Decimal
 from register.models import CustomUser
 
@@ -71,9 +69,13 @@ class BalanceTransferForm(forms.ModelForm):
 
                 currency = self.cleaned_data.get('currency')
 
-                req_amount = Decimal(round_up_2dp(convert_currency(currency, user.currency, amount)))
+                req_amount, conversion_success = convert_currency(currency, user.currency, amount)
 
-                if balance and not balance.amount >= req_amount:
+                # Handle conversion error
+                if not conversion_success:
+                    raise forms.ValidationError("There was a problem processing your request, please try again.")
+
+                if balance and req_amount > balance.amount:
                     raise forms.ValidationError("Insufficient funds to complete the transfer.")
 
                 return self.cleaned_data
@@ -125,9 +127,12 @@ class PaymentRequestUpdateForm(forms.ModelForm):
         if not declined:
             balance = Balance.objects.get(user=self.request.user)
 
-            req_amount = Decimal(round_up_2dp(
-                convert_currency(self.payment_request.currency, self.request.user.currency,
-                                 self.payment_request.amount)))
+            req_amount, conversion_success = convert_currency(self.payment_request.currency, self.request.user.currency,
+                                                              self.payment_request.amount)
+
+            # Handle conversion error
+            if not conversion_success:
+                raise forms.ValidationError("There was a problem processing your request, please try again.")
 
             if balance and req_amount > balance.amount:
                 raise forms.ValidationError("Insufficient funds to accept this request.")

@@ -34,7 +34,8 @@ class CustomUserManager(BaseUserManager):
 
         return user
 
-    def create_user_without_save(self, email, username, first_name, last_name, password=None, currency="", **extra_fields):
+    def create_user_without_save(self, email, username, first_name, last_name, password=None, currency="",
+                                 **extra_fields):
         """
        Create user with the given details, without saving in the database.
        """
@@ -50,6 +51,10 @@ class CustomUserManager(BaseUserManager):
         if not last_name:
             raise ValueError("The Last Name must be set")
 
+        # Make sure the user is active upon creating an account
+        if not extra_fields.get("is_active"):
+            extra_fields.setdefault("is_active", True)
+
         # Currency validation - administrators don't need it
         if not is_administrator:
             if not currency:
@@ -64,11 +69,6 @@ class CustomUserManager(BaseUserManager):
                 password = self.make_random_password()
                 # Make sure the admin changes the password on first login
                 extra_fields.setdefault("change_password", True)
-
-        # Admin/Super User accounts have to be active by default
-        if is_administrator:
-            if not extra_fields.get("is_active"):
-                extra_fields.setdefault("is_active", True)
 
         # All Users account creation
         email = self.normalize_email(email)

@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     # Apps
     'register',
-    'transactions'
+    'transactions',
     'conversion'
 ]
 
@@ -148,6 +148,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS CONFIG
 # Anything outside this list cannot make browser connections to the server
+
 CORS_ALLOWED_ORIGINS = [
     # Add any origins which need to make requests to the REST API from outside the app.
 ]

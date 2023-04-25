@@ -1,6 +1,9 @@
 from django.db.models import TextChoices
 from decimal import Decimal
 
+# Currency conversion API URL
+CONVERSION_API_URL = 'https://localhost:8000/conversion/'
+
 # Used for defining max_digits value of balance/amount fields
 MAX_DIGITS = 10
 

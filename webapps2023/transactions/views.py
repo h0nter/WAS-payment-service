@@ -9,11 +9,10 @@ from django.http import HttpResponseRedirect
 from django.contrib import messages
 from functools import partial
 from register.decorators import allow_customer_redirect_admin
-from decimal import Decimal
 from register.models import CustomUser
 from .models import Balance, BalanceTransfer, Notification, PaymentRequest
 import transactions.constants as constants
-from .utils import convert_currency, round_up_2dp, get_notifications
+from .utils import convert_currency, get_notifications
 from .forms import BalanceTransferForm, PaymentRequestForm, PaymentRequestUpdateForm
 
 
@@ -32,6 +31,166 @@ def create_request_notification(recipient, notification_type, request_obj):
     Notification.objects.create(user=recipient, type=notification_type, request=request_obj)
 
 
+def process_transfer(request, form):
+    # This block makes no connection/changes to the db, if it fails, simply return an error
+
+    # Fetch sender data and calculate the transaction amount to subtract
+    sender_user = request.user
+    sender_currency = sender_user.currency
+
+    # Fetch the recipient's data
+    recipient_email = form.cleaned_data.get("recipient_email")
+    recipient_user = CustomUser.objects.get(email=recipient_email)
+    recipient_currency = recipient_user.currency
+
+    # Calculate the amounts to subtract/add in the transaction
+    transfer_amount = form.cleaned_data.get("amount")
+    transfer_currency = form.cleaned_data.get('currency')
+
+    # Calculate the amount to subtract from the sender's account
+    # Convert currencies if needed, otherwise sub_amount = transfer_amount
+
+    sub_amount, conversion_success = convert_currency(transfer_currency, sender_currency, transfer_amount)
+
+    # Handle conversion error
+    if not conversion_success:
+        messages.error(request,
+                       'We encountered some problems with completing your transfer, please try again later.')
+        return False
+
+    # Calculate the amount to subtract from the sender's account
+    # Convert currencies if needed, otherwise add_amount = transfer_amount
+
+    add_amount, conversion_success = convert_currency(transfer_currency, recipient_currency, transfer_amount)
+
+    # Handle conversion error
+    if not conversion_success:
+        messages.error(request,
+                       'We encountered some problems with completing your transfer, please try again later.')
+        return False
+
+    # Obtain qs that'll lock the sender's and recipient's balance record for the time of update
+    sender_balance = Balance.objects.select_for_update().get(user=sender_user)
+    recipient_balance = Balance.objects.select_for_update().get(user__email=recipient_email)
+
+    # Run this block in transaction, so either the whole transfer is completed,
+    # or fully rolled back to maintain integrity
+    try:
+        with transaction.atomic():
+
+            if sender_balance.amount < sub_amount:
+                raise ValueError('Insufficient funds to complete the transfer.')
+
+            sender_balance.amount = sender_balance.amount - sub_amount
+            sender_balance.save()
+
+            if (recipient_balance.amount + add_amount) > constants.MAX_AMOUNT:
+                raise ValueError(
+                    'The amounts involved in this transaction exceed our limits. ' +
+                    'Please contact our technical support')
+            recipient_balance.amount = recipient_balance.amount + add_amount
+            recipient_balance.save()
+
+            bt = form.save()
+
+            # Send out the notifications to the users involved in the transaction
+            transaction.on_commit(
+                partial(create_transfer_notifications, sender=sender_user, recipient=recipient_user,
+                        transfer_obj=bt))
+
+    except IntegrityError:
+        # In case the transaction fails at any point, send an error message
+        messages.error(request,
+                       'We encountered some problems with completing your transfer, please try again later.')
+        return False
+    except ValueError as e:
+        messages.error(request, str(e))
+        return False
+
+    return True
+
+
+def process_request_accepted(request, payment_request_id, sender, recipient, transfer_currency, transfer_amount,
+                             description):
+    # Calculate the amount to subtract from the sender's account
+    # Convert currencies if needed, otherwise sub_amount = transfer_amount
+
+    sub_amount, conversion_success = convert_currency(transfer_currency, sender.currency, transfer_amount)
+
+    # Handle conversion error
+    if not conversion_success:
+        messages.error(request,
+                       'We encountered some problems with completing your transfer, please try again later.')
+        return False
+
+    # Calculate the amount to add to the recipient's account
+    # Convert currencies if needed, otherwise sub_amount = transfer_amount
+
+    add_amount, conversion_success = convert_currency(transfer_currency, recipient.currency, transfer_amount)
+
+    # Handle conversion error
+    if not conversion_success:
+        messages.error(request,
+                       'We encountered some problems with completing your transfer, please try again later.')
+        return False
+
+    # Create the transfer object to store later in the database
+    transfer_obj = BalanceTransfer(sender_email=sender.email, recipient_email=recipient.email,
+                                   currency=transfer_currency, amount=transfer_amount,
+                                   description=description)
+
+    # Obtain qs that'll lock the sender's and recipient's balance record for the time of update
+    sender_balance = Balance.objects.select_for_update().get(user=sender)
+    recipient_balance = Balance.objects.select_for_update().get(user=recipient)
+
+    # Get the payment request for updates
+    pay_request = PaymentRequest.objects.select_for_update().get(id=payment_request_id)
+
+    # Run this block in transaction, so either the whole transfer is completed,
+    # or fully rolled back to maintain integrity
+    try:
+        with transaction.atomic():
+
+            if sender_balance.amount < sub_amount:
+                raise ValueError('Insufficient funds to complete the transfer.')
+
+            sender_balance.amount = sender_balance.amount - sub_amount
+            sender_balance.save()
+
+            if (recipient_balance.amount + add_amount) > constants.MAX_AMOUNT:
+                raise ValueError(
+                    'The amounts involved in this transaction exceed our limits. ' +
+                    'Please contact our technical support')
+            recipient_balance.amount = recipient_balance.amount + add_amount
+            recipient_balance.save()
+
+            # Store the transfer object in the database
+            transfer_obj.save()
+
+            # Update request status to accepted
+            pay_request.status = constants.RequestStatus.ACC
+            pay_request.closed_date = timezone.now()
+            pay_request.save()
+
+            # Send out the notifications to the users involved in the transaction
+            transaction.on_commit(
+                partial(create_transfer_and_request_update_notifications, sender=sender,
+                        recipient=recipient,
+                        transfer_obj=transfer_obj,
+                        request_obj=pay_request))
+
+    except IntegrityError:
+        # In case the transaction fails at any point, send an error message
+        messages.error(request,
+                       'We encountered some problems with completing your transfer, please try again later.')
+        return False
+    except ValueError as e:
+        messages.error(request, str(e))
+        return False
+
+    return True
+
+
 @login_required
 @allow_customer_redirect_admin
 @csrf_protect
@@ -41,72 +200,7 @@ def balance_transfer(request):
 
         if form.is_valid():
 
-            # This block makes no connection/changes to the db, if it fails, simply return an error
-
-            # Fetch sender data and calculate the transaction amount to subtract
-            sender_user = request.user
-            sender_currency = sender_user.currency
-
-            # Fetch the recipient's data
-            recipient_email = form.cleaned_data.get("recipient_email")
-            recipient_user = CustomUser.objects.get(email=recipient_email)
-            recipient_currency = recipient_user.currency
-
-            # Calculate the amounts to subtract/add in the transaction
-            transfer_amount = form.cleaned_data.get("amount")
-            transfer_currency = form.cleaned_data.get('currency')
-
-            # Calculate the amount to subtract from the sender's account
-            # always round up, as we don't want to end up subtracting less money than is added to the recipient
-            # this won't have any effect if the currencies match
-            sub_amount = Decimal(round_up_2dp(convert_currency(transfer_currency, sender_currency, transfer_amount)))
-
-            # Calculate the amount to subtract from the sender's account
-            # since the money out is rounded up already, we can simply round here
-            # this won't have any effect if the currencies match
-            add_amount = Decimal(round(convert_currency(transfer_currency, recipient_currency, transfer_amount), 2))
-
-            sender_balance = Balance.objects.select_for_update().get(user=sender_user)
-            recipient_balance = Balance.objects.select_for_update().get(user__email=recipient_email)
-
-            # A flag for transaction completed successfully
-            success = False
-
-            # Run this block in transaction, so either the whole transfer is completed,
-            # or fully rolled back to maintain integrity
-            try:
-                with transaction.atomic():
-
-                    if sender_balance.amount < sub_amount:
-                        raise ValueError('Insufficient funds to complete the transfer.')
-
-                    sender_balance.amount = sender_balance.amount - sub_amount
-                    sender_balance.save()
-
-                    if (recipient_balance.amount + add_amount) > constants.MAX_AMOUNT:
-                        raise ValueError(
-                            'The amounts involved in this transaction exceed our limits. ' +
-                            'Please contact our technical support')
-                    recipient_balance.amount = recipient_balance.amount + add_amount
-                    recipient_balance.save()
-
-                    bt = form.save()
-                    success = True
-
-                    # Send out the notifications to the users involved in the transaction
-                    transaction.on_commit(
-                        partial(create_transfer_notifications, sender=sender_user, recipient=recipient_user,
-                                transfer_obj=bt))
-
-            except IntegrityError:
-                # In case the transaction fails at any point, send an error message
-                messages.error(request,
-                               'We encountered some problems with completing your transfer, please try again later.')
-            except ValueError as e:
-                messages.error(request, str(e))
-
-            # If transaction was completed, show success message
-            if success:
+            if process_transfer(request, form):
                 return render(request, "transactions/transfer_success.html",
                               {"user": request.user, "notifications": get_notifications(request.user)})
 
@@ -262,88 +356,19 @@ def request_update_status(request, pk=0):
 
             # Fetch sender and recipient data
             sender_user = request.user
-            sender_currency = sender_user.currency
 
             # Fetch the recipient's data
             recipient_email = pr.sender_email
             recipient_user = CustomUser.objects.get(email=recipient_email)
-            recipient_currency = recipient_user.currency
 
             if 'request_accept' in request.POST:  # Payment Request Accepted
 
-                # Calculate the amounts to subtract/add in the transaction
-                transfer_amount = pr.amount
-                transfer_currency = pr.currency
-
-                # Calculate the amount to subtract from the sender's account
-                # always round up, as we don't want to end up subtracting less money than is added to the recipient
-                # this won't have any effect if the currencies match
-                sub_amount = Decimal(
-                    round_up_2dp(convert_currency(transfer_currency, sender_currency, transfer_amount)))
-
-                # Calculate the amount to subtract from the sender's account
-                # since the money out is rounded up already, we can simply round here
-                # this won't have any effect if the currencies match
-                add_amount = Decimal(round(convert_currency(transfer_currency, recipient_currency, transfer_amount), 2))
-
-                # Create the transfer object to store later in the database
-                transfer_obj = BalanceTransfer(sender_email=sender_user.email, recipient_email=recipient_email,
-                                               currency=transfer_currency, amount=transfer_amount,
-                                               description=pr.description)
-
-                sender_balance = Balance.objects.select_for_update().get(user=sender_user)
-                recipient_balance = Balance.objects.select_for_update().get(user__email=recipient_email)
-
-                # Get the payment request for updates
-                pay_request = PaymentRequest.objects.select_for_update().get(id=pr.id)
-
-                # A flag for transaction completed successfully
-                success = False
-
-                # Run this block in transaction, so either the whole transfer is completed,
-                # or fully rolled back to maintain integrity
-                try:
-                    with transaction.atomic():
-
-                        if sender_balance.amount < sub_amount:
-                            raise ValueError('Insufficient funds to complete the transfer.')
-
-                        sender_balance.amount = sender_balance.amount - sub_amount
-                        sender_balance.save()
-
-                        if (recipient_balance.amount + add_amount) > constants.MAX_AMOUNT:
-                            raise ValueError(
-                                'The amounts involved in this transaction exceed our limits. ' +
-                                'Please contact our technical support')
-                        recipient_balance.amount = recipient_balance.amount + add_amount
-                        recipient_balance.save()
-
-                        # Store the transfer object in the database
-                        transfer_obj.save()
-
-                        # Update request status to accepted
-                        pay_request.status = constants.RequestStatus.ACC
-                        pay_request.closed_date = timezone.now()
-                        pay_request.save()
-
-                        success = True
-
-                        # Send out the notifications to the users involved in the transaction
-                        transaction.on_commit(
-                            partial(create_transfer_and_request_update_notifications, sender=sender_user,
-                                    recipient=recipient_user,
-                                    transfer_obj=transfer_obj,
-                                    request_obj=pay_request))
-
-                except IntegrityError:
-                    # In case the transaction fails at any point, send an error message
-                    messages.error(request,
-                                   'We encountered some problems with completing your transfer, please try again later.')
-                except ValueError as e:
-                    messages.error(request, str(e))
-
-                # If transaction was completed, show success message
-                if success:
+                # Process the accepted request transaction
+                # ff transaction was completed, show success message
+                if process_request_accepted(request, payment_request_id=pr.id, sender=request.user,
+                                            recipient=recipient_user,
+                                            transfer_currency=pr.currency, transfer_amount=pr.amount,
+                                            description=pr.description):
                     return render(request, "transactions/transfer_success.html",
                                   {"user": request.user, "notifications": get_notifications(user)})
 
