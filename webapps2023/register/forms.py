@@ -1,4 +1,6 @@
 from django import forms
+
+from payapp.utils import convert_currency
 from .models import CustomUser
 from payapp.models import Balance
 from payapp.constants import Currency
@@ -52,20 +54,17 @@ class CustomUserCreationForm(forms.ModelForm):
             # Only non admin users can have balance
             if not user.is_admin:
 
-                # Get the conversion rates from GBP
-                gbp2usd = 1.20
-                gbp2eur = 1.13
-
                 # Assign the user equivalent of 1000 GBP in their selected currency
-                amount = 1000
+                gbp_amount = 1000
 
-                match user.currency:
-                    case Currency.USD:
-                        amount = amount * gbp2usd
-                    case Currency.EUR:
-                        amount = amount * gbp2eur
+                converted_amount, conversion_success = convert_currency(Currency.GBP, user.currency, gbp_amount)
 
-                Balance.objects.create(user=user, currency=user.currency, amount=amount)
+                # Handle conversion error
+                if not conversion_success:
+                    raise ValueError(
+                        "There was a problem setting up an account with your selected currency. Please try again later.")
+
+                Balance.objects.create(user=user, currency=user.currency, amount=converted_amount)
 
             return user
 

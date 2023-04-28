@@ -201,13 +201,13 @@ def balance_transfer(request):
         if form.is_valid():
 
             if process_transfer(request, form):
-                return render(request, "transactions/transfer_success.html",
+                return render(request, "payapp/transfer_success.html",
                               {"user": request.user, "notifications": get_notifications(request.user)})
 
     else:
         form = BalanceTransferForm(request=request)
 
-    return render(request, "transactions/balance_transfer.html",
+    return render(request, "payapp/balance_transfer.html",
                   {"form": form, "user": request.user, "notifications": get_notifications(request.user)})
 
 
@@ -247,13 +247,13 @@ def payment_request(request):
                                'We encountered some problems with making this request, please try again later.')
 
             if success:
-                return render(request, "transactions/request_success.html",
+                return render(request, "payapp/request_success.html",
                               {"user": request.user, "notifications": get_notifications(request.user)})
 
     else:
         form = PaymentRequestForm(request=request)
 
-    return render(request, "transactions/payment_request.html",
+    return render(request, "payapp/payment_request.html",
                   {"form": form, "user": request.user, "notifications": get_notifications(request.user)})
 
 
@@ -285,7 +285,7 @@ def transactions_list(request):
 
         transactions_processed.append(tp)
 
-    return render(request, 'transactions/transactions_list.html',
+    return render(request, 'payapp/transactions_list.html',
                   context={"user": user, "notifications": get_notifications(user),
                            "transactions": transactions_processed})
 
@@ -327,7 +327,7 @@ def requests_list(request):
         else:
             requests_history.append(tp)
 
-    return render(request, 'transactions/requests_list.html',
+    return render(request, 'payapp/requests_list.html',
                   context={"user": user, "notifications": get_notifications(user), "requests_history": requests_history,
                            "requests_pending": requests_pending})
 
@@ -369,7 +369,7 @@ def request_update_status(request, pk=0):
                                             recipient=recipient_user,
                                             transfer_currency=pr.currency, transfer_amount=pr.amount,
                                             description=pr.description):
-                    return render(request, "transactions/transfer_success.html",
+                    return render(request, "payapp/transfer_success.html",
                                   {"user": request.user, "notifications": get_notifications(user)})
 
             elif 'request_decline' in request.POST:  # Payment Request Declined
@@ -402,11 +402,11 @@ def request_update_status(request, pk=0):
                                    'We encountered some problems with declining this request, please try again later.')
 
                 if success:
-                    return render(request, "transactions/request_declined.html",
+                    return render(request, "payapp/request_declined.html",
                                   {"user": request.user, "notifications": get_notifications(user)})
 
     else:
         form = PaymentRequestUpdateForm(request=request, payment_request=pr)
 
-    return render(request, 'transactions/request_update_status.html',
+    return render(request, 'payapp/request_update_status.html',
                   context={"user": user, "notifications": get_notifications(user), "form": form})

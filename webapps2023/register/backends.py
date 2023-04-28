@@ -6,6 +6,7 @@ class CustomerLoginBackend(ModelBackend):
     '''
     Only allows members of the Customers group to log in through this backend
     '''
+
     def authenticate(self, request, username=None, password=None, **kwargs):
         user = super().authenticate(request, username=username, password=password, **kwargs)
         if user and user.is_staff:
@@ -14,10 +15,12 @@ class CustomerLoginBackend(ModelBackend):
             raise PermissionDenied('Administrators can only login via the designated admin login page.')
         return user
 
+
 class AdminLoginBackend(ModelBackend):
     '''
     Only allows administrators to log in through this backend
     '''
+
     def authenticate(self, request, username=None, password=None, **kwargs):
         user = super().authenticate(request, username=username, password=password, **kwargs)
         if user and not user.is_staff:

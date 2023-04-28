@@ -116,9 +116,17 @@ def sign_up(request):
     form = CustomUserCreationForm(request.POST or None)
 
     if form.is_valid():
-        form.save()
-        messages.success(request, 'Registered Successfully!')
-        return render(request, 'register/success.html')
+        success = False
+
+        try:
+            form.save()
+            success = True
+        except ValueError as err:
+            messages.success(request, err)
+
+        if success:
+            messages.success(request, 'Registered Successfully!')
+            return render(request, 'register/success.html')
     elif request.POST:
         messages.error(request, 'Registration Unsuccessful. Invalid information.')
 

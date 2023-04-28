@@ -9,7 +9,7 @@ GROUPS_PERMISSIONS = {
         # Create an empty group without permissions just to identify regular users
     },
     UserGroups.ADMINS: {
-        CustomUser: ['view', 'add'],
+        CustomUser: ['view', 'add', 'change'],
         Balance: ['view'],
         BalanceTransfer: ['view'],
     }
