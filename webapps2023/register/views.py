@@ -11,8 +11,8 @@ from django.forms import ValidationError
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from .forms import CustomUserCreationForm
-from transactions.models import Balance
-from transactions.utils import get_notifications
+from payapp.models import Balance
+from payapp.utils import get_notifications
 from .management.user_groups import UserGroups
 from .decorators import check_user_is_in_group, allow_customer_redirect_admin, redirect_if_logged_in
 

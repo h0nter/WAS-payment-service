@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from transactions.constants import Currency
 
 
 class ConversionSerializer(serializers.Serializer):

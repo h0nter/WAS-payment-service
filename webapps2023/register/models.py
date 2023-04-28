@@ -2,7 +2,7 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from .managers import CustomUserManager
-from transactions.constants import Currency
+from payapp.constants import Currency
 
 
 # Create your models here - HOW DO I CREATE A CUSTOM USER... ?
@@ -34,6 +34,3 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"
-
-
-

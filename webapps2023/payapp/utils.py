@@ -1,7 +1,7 @@
 import requests
 from decimal import Decimal
 from django.urls import reverse
-import transactions.constants as constants
+import payapp.constants as constants
 from .models import Notification
 
 

@@ -1,6 +1,6 @@
 from django import forms
 from .models import BalanceTransfer, Balance, PaymentRequest
-import transactions.constants as constants
+import payapp.constants as constants
 from .utils import convert_currency
 from decimal import Decimal
 from register.models import CustomUser
@@ -40,7 +40,8 @@ class BalanceTransferForm(forms.ModelForm):
         else:
             raise forms.ValidationError("There was a problem processing your request, please try again.")
 
-        qs = CustomUser.objects.filter(email=email)
+        # Check that the recipient exists and is not an administrator
+        qs = CustomUser.objects.filter(email=email, is_admin=False).exclude(pk=self.instance.pk)
 
         if not qs.exists():
             raise forms.ValidationError("A recipient with the given email address doesn't exist")
@@ -172,7 +173,7 @@ class PaymentRequestForm(forms.ModelForm):
         else:
             raise forms.ValidationError("There was a problem processing your request, please try again.")
 
-        qs = CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk)
+        qs = CustomUser.objects.filter(email=email, is_admin=False).exclude(pk=self.instance.pk)
 
         if not qs.exists():
             raise forms.ValidationError("A recipient with the given email address doesn't exist")

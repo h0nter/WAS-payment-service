@@ -11,7 +11,7 @@ from functools import partial
 from register.decorators import allow_customer_redirect_admin
 from register.models import CustomUser
 from .models import Balance, BalanceTransfer, Notification, PaymentRequest
-import transactions.constants as constants
+import payapp.constants as constants
 from .utils import convert_currency, get_notifications
 from .forms import BalanceTransferForm, PaymentRequestForm, PaymentRequestUpdateForm
 

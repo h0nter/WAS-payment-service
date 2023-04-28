@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     # Apps
     'register',
-    'transactions',
+    'payapp',
     'conversion'
 ]
 

@@ -31,5 +31,5 @@ urlpatterns = [
     path('register/login/', CustomLoginView.as_view(), name='user_login'),
     path('register/', include('django.contrib.auth.urls')),
     path('register/', include('register.urls')),
-    path('transactions/', include('transactions.urls'))
+    path('payapp/', include('payapp.urls'))
 ]

@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from register.models import CustomUser
-import transactions.constants as constants
+import payapp.constants as constants
 
 
 class Balance(models.Model):

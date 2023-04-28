@@ -1,5 +1,5 @@
 from django.contrib import admin
-from transactions.models import Balance, BalanceTransfer, PaymentRequest
+from payapp.models import Balance, BalanceTransfer, PaymentRequest
 
 
 class BalanceTransferAdmin(admin.ModelAdmin):
